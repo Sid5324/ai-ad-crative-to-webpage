@@ -6,9 +6,13 @@ import ResultPanel from './components/result-panel';
 import LandingPageRenderer from '@/components/preview/landing-page-renderer';
 import { useInView } from 'react-intersection-observer';
 
-// Convert spec to HTML for copying
+// Convert spec to HTML with design tokens
 function generateHtmlFromSpec(spec: any, brand?: string): string {
   const pageBrand = brand || spec?.brand || 'Brand';
+  const design = spec?.designTokens || {};
+  const primary = design.colorPrimary || '#2563eb';
+  const gradient = design.gradient || `linear-gradient(135deg, ${primary}, #3b82f6)`;
+  
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,14 +20,20 @@ function generateHtmlFromSpec(spec: any, brand?: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${pageBrand}</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .hero-gradient { background: ${gradient}; }
+    .btn-primary { background: ${primary}; }
+    .text-primary { color: ${primary}; }
+  </style>
 </head>
 <body>
   <!-- Hero -->
-  <section style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 80px 20px; text-align: center;">
+  <section class="hero-gradient" style="color: white; padding: 80px 20px; text-align: center;">
     <h1 style="font-size: clamp(32px, 5vw, 48px); font-weight: bold; margin-bottom: 16px;">${spec.hero?.headline || pageBrand}</h1>
-    <p style="font-size: 18px; margin-bottom: 32px;">${spec.hero?.subheadline || ''}</p>
-    <a href="${spec.hero?.primaryCTA?.href || '#'}" style="background: white; color: #1e3a8a; padding: 14px 28px; border-radius: 8px; font-weight: 600; margin-right: 12px;">${spec.hero?.primaryCTA?.label || 'Get Started'}</a>
-    <a href="${spec.hero?.secondaryCTA?.href || '#'}" style="border: 2px solid white; color: white; padding: 12px 26px; border-radius: 8px; font-weight: 600;">${spec.hero?.secondaryCTA?.label || 'Learn More'}</a>
+    <p style="font-size: 18px; margin-bottom: 32px; opacity: 0.95;">${spec.hero?.subheadline || ''}</p>
+    <a href="${spec.hero?.primaryCTA?.href || '#'}" style="background: white; color: ${primary}; padding: 14px 28px; border-radius: 8px; font-weight: 600; margin-right: 12px; text-decoration: none; display: inline-block;">${spec.hero?.primaryCTA?.label || 'Get Started'}</a>
+    <a href="${spec.hero?.secondaryCTA?.href || '#'}" style="border: 2px solid white; color: white; padding: 12px 26px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">${spec.hero?.secondaryCTA?.label || 'Learn More'}</a>
   </section>
   
   <!-- Stats -->
@@ -31,7 +41,7 @@ function generateHtmlFromSpec(spec: any, brand?: string): string {
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; max-width: 1000px; margin: 0 auto;">
       ${(spec.stats || []).map((stat: any) => `
       <div>
-        <div style="font-size: 36px; font-weight: bold; color: #1e3a8a;">${stat.value}</div>
+        <div style="font-size: 36px; font-weight: bold; color: ${primary};">${stat.value}</div>
         <div style="font-size: 16px; color: #64748b;">${stat.label}</div>
       </div>`).join('')}
     </div>
@@ -40,27 +50,27 @@ function generateHtmlFromSpec(spec: any, brand?: string): string {
   <!-- Sections -->
   ${(spec.sections || []).map((section: any, i: number) => `
   <section style="padding: 60px 20px; background: ${i % 2 === 0 ? '#fff' : '#f8fafc'};">
-    <h2 style="font-size: 32px; font-weight: bold; text-align: center; margin-bottom: 40px;">${section.title}</h2>
+    <h2 style="font-size: 32px; font-weight: bold; text-align: center; margin-bottom: 40px; color: #1e293b;">${section.title}</h2>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px; max-width: 1000px; margin: 0 auto;">
       ${(section.items || []).map((item: any) => `
       <div style="text-align: center; padding: 24px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 12px;">${item.title}</h3>
+        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 12px; color: ${primary};">${item.title}</h3>
         <p style="color: #64748b;">${item.body}</p>
       </div>`).join('')}
     </div>
   </section>`).join('')}
   
   <!-- Closing CTA -->
-  <section style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; padding: 60px 20px; text-align: center;">
+  <section class="hero-gradient" style="color: white; padding: 60px 20px; text-align: center;">
     <h2 style="font-size: 32px; font-weight: bold; margin-bottom: 16px;">${spec.closingCTA?.headline || 'Ready?'}</h2>
-    <p style="font-size: 18px; margin-bottom: 32px;">${spec.closingCTA?.body || ''}</p>
-    <a href="${spec.closingCTA?.primaryCTA?.href || '#'}" style="background: white; color: #1e3a8a; padding: 14px 28px; border-radius: 8px; font-weight: 600;">${spec.closingCTA?.primaryCTA?.label || 'Get Started'}</a>
+    <p style="font-size: 18px; margin-bottom: 32px; opacity: 0.95;">${spec.closingCTA?.body || ''}</p>
+    <a href="${spec.closingCTA?.primaryCTA?.href || '#'}" style="background: white; color: ${primary}; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">${spec.closingCTA?.primaryCTA?.label || 'Get Started'}</a>
   </section>
   
   <!-- Footer -->
-  <footer style="background: #1e293b; color: white; padding: 40px 20px; text-align: center;">
+  <footer style="background: ${primary}; color: white; padding: 40px 20px; text-align: center;">
     <p style="font-size: 18px; font-weight: 600;">${pageBrand}</p>
-    <p style="color: #94a3b8; font-size: 14px;">© 2024 ${pageBrand}. All rights reserved.</p>
+    <p style="opacity: 0.8; font-size: 14px;">© 2024 ${pageBrand}. All rights reserved.</p>
   </footer>
 </body>
 </html>`;

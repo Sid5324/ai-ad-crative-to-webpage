@@ -1,531 +1,473 @@
-// src/app/api/generate/route.ts - MULTI-STEP AI PIPELINE
+// src/app/api/generate/route.ts - 4-STAGE PRODUCTION PIPELINE
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { runGroqText } from '@/lib/ai/run-groq-text';
-import { runGeminiText } from '@/lib/ai/run-gemini-text';
+import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+// Initialize clients
+const groq = process.env.GROQ_API_KEY ? new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: 'https://api.groq.com/openai/v1',
+}) : null;
+
+const gemini = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+
+const GROQ_MODELS = ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
+const GEMINI_MODELS = ['gemini-1.5-flash-8b', 'gemini-1.5-flash'];
 
 const PREVIEWS: Record<string, any> = {};
 
-// Example output that shows the quality we want
-const EXAMPLE_MERCHANT_SPEC = {
-  brand: 'DoorDash',
-  audience: 'merchant',
-  pageGoal: 'Restaurant signups',
-  hero: {
-    headline: 'Increase Your Restaurant Reach',
-    subheadline: 'Join 500,000+ restaurants growing their business with DoorDash\'s delivery platform. Connect with millions of customers and boost your revenue.',
-    primaryCTA: { label: 'Get Started Free', href: '#signup' },
-    secondaryCTA: { label: 'Schedule Demo', href: '#demo' },
-  },
-  stats: [
-    { value: '500K+', label: 'Active Merchants' },
-    { value: '300%', label: 'Average Revenue Increase' },
-    { value: '99.9%', label: 'Platform Uptime' },
-  ],
-  sections: [
-    {
-      type: 'benefits',
-      title: 'Grow Your Restaurant Business',
-      items: [
-        { title: 'Expand Customer Reach', body: 'Access millions of new customers through our delivery network and increase your restaurant\'s visibility in the market.' },
-        { title: 'Streamline Operations', body: 'Automate order management, reduce phone calls, and focus on what you do best - creating great food.' },
-        { title: 'Boost Revenue', body: 'Increase off-premise sales and grow your business with our proven platform that delivers real results.' },
-        { title: 'Professional Support', body: 'Get dedicated merchant support and powerful tools to optimize your restaurant\'s performance and growth.' },
-      ],
-    },
-    {
-      type: 'testimonials',
-      title: 'Join Thousands of Successful Restaurants',
-      items: [
-        { title: 'Maria Rodriguez, Taco Bell Franchise', body: 'DoorDash increased our off-premise sales by 250%. The platform is reliable and the support team is excellent.' },
-        { title: 'James Chen, Local Asian Fusion', body: 'We\'ve reached customers we never could before. Our revenue has doubled since joining DoorDash.' },
-      ],
-    },
-    {
-      type: 'faq',
-      title: 'Merchant Questions',
-      items: [
-        { title: 'How do I get started?', body: 'Sign up online in minutes. Our dedicated merchant success team will help you integrate your menu and optimize performance.' },
-        { title: 'What are the costs?', body: 'No setup fees, no monthly fees. You only pay a commission on successfully delivered orders. Transparent pricing.' },
-        { title: 'What support do you provide?', body: '24/7 technical support, dedicated account management, marketing assistance, and performance optimization tools.' },
-      ],
-    },
-  ],
-  closingCTA: {
-    headline: 'Ready to Grow Your Restaurant?',
-    body: 'Join the DoorDash merchant network and start increasing your revenue today. No setup fees, dedicated support, and proven results.',
-    primaryCTA: { label: 'Get Started Free', href: '#signup' },
-  },
-};
-
-const EXAMPLE_CONSUMER_SPEC = {
-  brand: 'DoorDash',
-  audience: 'consumer',
-  pageGoal: 'Food delivery signups',
-  hero: {
-    headline: 'Your Favorite Restaurants, Delivered',
-    subheadline: 'Get food delivery from thousands of restaurants in your area. Order now and get it delivered to your door.',
-    primaryCTA: { label: 'Order Now', href: '#order' },
-    secondaryCTA: { label: 'Explore Restaurants', href: '#restaurants' },
-  },
-  stats: [
-    { value: '50K+', label: 'Restaurant Partners' },
-    { value: '25M+', label: 'Orders Delivered' },
-    { value: '30min', label: 'Average Delivery' },
-  ],
-  sections: [
-    {
-      type: 'benefits',
-      title: 'Why Choose DoorDash',
-      items: [
-        { title: 'Huge Selection', body: 'Access thousands of local restaurants and national chains all in one app.' },
-        { title: 'Fast Delivery', body: 'Get your food delivered hot and fresh in 30 minutes or less.' },
-        { title: 'Easy Tracking', body: 'Track your order in real-time from kitchen to your door.' },
-        { title: 'Great Deals', body: 'Discover exclusive deals and promotions from your favorite restaurants.' },
-      ],
-    },
-  ],
-  closingCTA: {
-    headline: 'Hungry? Order Now',
-    body: 'Download the DoorDash app and get $0 delivery fee on your first order.',
-    primaryCTA: { label: 'Order Now', href: '#download' },
-  },
-};
-
 export async function POST(req: Request) {
-  console.log('🚀 MULTI-STEP PIPELINE START');
+  console.log('🚀 4-STAGE PIPELINE START');
+  
+  const body = await req.json();
+  const input = {
+    adInputType: body.adInputType || 'copy',
+    adInputValue: body.adInputValue || '',
+    targetUrl: body.targetUrl,
+    targetAudience: body.targetAudience || 'auto',
+    designStyle: body.designStyle || 'auto',
+  };
 
-  let body: any = {};
   try {
-    body = await req.json();
-    const input = {
-      adInputType: body.adInputType || 'copy',
-      adInputValue: body.adInputValue || '',
-      targetUrl: body.targetUrl,
-      targetAudience: body.targetAudience || 'auto',
-      designStyle: body.designStyle || 'auto',
-    };
-
-    // Extract brand first (no AI needed)
+    // Extract brand from URL
     const brandName = extractBrand(input.targetUrl);
     const audience = detectAudience(input.targetUrl, input.targetAudience);
-    const isMerchant = audience === 'merchant' || audience === 'b2b';
-
-    console.log(`✅ Brand: "${brandName}", Audience: "${audience}"`);
-
-    // Build multi-step analysis prompt
-    const prompt = buildAnalysisPrompt(input, brandName, audience);
-    let result: any;
-    let engine = 'groq';
-    let modelUsed = '';
-    let analysisSteps = 0;
-
-    // 🚀 ENGINE 1: TRY GROQ FIRST
-    try {
-      console.log('🔄 Trying Groq...');
-      const groqResult = await runGroqText(prompt, {});
-      console.log(`✅ Groq success: ${groqResult.model}`);
-      result = safeParseSpec(groqResult.text, brandName, audience, isMerchant);
-      modelUsed = groqResult.model;
-      analysisSteps = 1;
-    } catch (groqError) {
-      console.log('❌ Groq failed, trying Gemini...');
-
-      // 🚀 ENGINE 2: GEMINI
-      try {
-        engine = 'gemini';
-        console.log('🔄 Trying Gemini...');
-        const geminiResult = await runGeminiText(prompt);
-        console.log(`✅ Gemini success: ${geminiResult.model}`);
-        result = safeParseSpec(geminiResult.text, brandName, audience, isMerchant);
-        modelUsed = geminiResult.model;
-        analysisSteps = 1;
-      } catch (geminiError) {
-        console.log('❌ Both AI failed, generating custom fallback...');
-        
-        // Generate brand-specific fallback based on ad content
-        result = {
-          spec: generateSmartFallback(brandName, audience, input.adInputValue, isMerchant),
-          report: { valid: true, issues: ['AI generation failed, using smart fallback'] },
-          qualityScore: 75,
-        };
-        engine = 'fallback';
-        modelUsed = 'smart-fallback';
-        analysisSteps = 0;
-      }
-    }
-
-    // Save and return
-    const previewId = nanoid(10);
-    PREVIEWS[previewId] = result;
-
-    console.log(`✅ COMPLETE! ID: ${previewId} (${engine}:${modelUsed})`);
-
-    return NextResponse.json({
-      success: true,
-      previewId,
-      spec: result.spec,
-      report: result.report,
-      qualityScore: result.qualityScore,
-      engine,
-      model: modelUsed,
-      debug: {
-        brand: brandName,
-        audience,
-        hero: result.spec.hero?.headline,
-        sections: result.spec.sections?.length || 0,
-        steps: analysisSteps,
-      },
-    });
-
-  } catch (error: any) {
-    console.error('❌ CRITICAL ERROR:', error.message);
-
-    const targetUrl = body?.targetUrl || 'https://example.com';
-    const brandName = extractBrand(targetUrl);
-    const audience = detectAudience(targetUrl, body?.targetAudience);
-    const isMerchant = audience === 'merchant' || audience === 'b2b';
     
-    const spec = generateSmartFallback(brandName, audience, body?.adInputValue || '', isMerchant);
+    console.log(`📋 Brand: "${brandName}", Audience: "${audience}"`);
+
+    // STAGE 1: Analyze Ad
+    console.log('🔍 STAGE 1: Analyzing ad...');
+    const adSignals = await stage1AnalyzeAd(input.adInputValue, input.adInputType, brandName);
+    console.log(`   → Hook: "${adSignals.hook}", Intent: "${adSignals.intent}", Tone: "${adSignals.audienceTone}"`);
+
+    // STAGE 2: Analyze Page/Brand
+    console.log('🔍 STAGE 2: Analyzing brand...');
+    const pageSignals = await stage2AnalyzePage(input.targetUrl, brandName, audience);
+    console.log(`   → Brand: "${pageSignals.brand}", Style: "${pageSignals.designStyle}"`);
+
+    // STAGE 3: Create Strategy
+    console.log('🔍 STAGE 3: Creating strategy...');
+    const strategy = await stage3CreateStrategy(adSignals, pageSignals, brandName, audience);
+    console.log(`   → Design: "${strategy.designDirection.colorPrimary}", Layout: "${strategy.designDirection.layout}"`);
+
+    // STAGE 4: Generate Spec with Design Tokens
+    console.log('🔍 STAGE 4: Generating spec...');
+    const spec = stage4GenerateSpec(strategy, adSignals, pageSignals, brandName, audience);
+    
     const previewId = nanoid(10);
+    PREVIEWS[previewId] = { spec, adSignals, pageSignals, strategy };
+    
+    const qualityScore = calculateQuality(spec, adSignals, strategy);
+    console.log(`✅ COMPLETE! ID: ${previewId}, Quality: ${qualityScore}`);
 
     return NextResponse.json({
       success: true,
       previewId,
       spec,
-      report: { valid: true },
-      qualityScore: 70,
-      engine: 'fallback',
-      model: 'error-recovery',
+      qualityScore,
+      engine: 'hybrid',
       debug: {
         brand: brandName,
         audience,
+        adHook: adSignals.hook,
+        design: strategy.designDirection.colorPrimary,
         hero: spec.hero.headline,
-        sections: spec.sections.length,
-        status: 'error-recovery'
       },
+    });
+
+  } catch (error: any) {
+    console.error('❌ PIPELINE ERROR:', error.message);
+    
+    // Intelligent fallback
+    const brandName = extractBrand(body.targetUrl || 'https://example.com');
+    const audience = detectAudience(body.targetUrl, body.targetAudience);
+    const spec = generateIntelligentFallback(brandName, audience, body.adInputValue);
+    
+    return NextResponse.json({
+      success: true,
+      previewId: nanoid(10),
+      spec,
+      qualityScore: 70,
+      engine: 'fallback',
+      debug: { brand: brandName, fallback: true },
     });
   }
 }
 
-// 🚀 MULTI-STEP ANALYSIS PROMPT BUILDER
-function buildAnalysisPrompt(input: any, brandName: string, audience: string) {
-  const isMerchant = audience === 'merchant' || audience === 'b2b';
-  const example = isMerchant ? EXAMPLE_MERCHANT_SPEC : EXAMPLE_CONSUMER_SPEC;
-  
-  return `You are an expert landing page strategist. Generate a high-converting landing page spec for ${brandName}.
+// ============ STAGE 1: AD ANALYZER ============
+async function stage1AnalyzeAd(adContent: string, type: string, brandName: string) {
+  if (!adContent || adContent.length < 10) {
+    return {
+      hook: `${brandName} - Premium Service`,
+      intent: 'signup',
+      audienceTone: 'professional',
+      emotionalTrigger: 'trust',
+      offerType: 'free_trial',
+      visualStyle: 'modern',
+    };
+  }
 
-CONTEXT:
-- Target URL: ${input.targetUrl}
-- Detected Audience: ${audience} (${isMerchant ? 'business/merchant' : 'consumer'})
-- Ad Input Type: ${input.adInputType}
-- Ad Content: ${input.adInputValue || 'Not provided'}
+  const prompt = `Analyze this ad and extract key signals. Return ONLY valid JSON:
 
-INSTRUCTIONS:
-1. Analyze the ad content to extract: primary hook, user pain points, key benefits, trust signals
-2. Create a landing page spec that matches the ${audience} audience
-3. Use the example below as a quality reference - match this depth and professionalism
+AD: ${adContent}
 
-EXAMPLE OUTPUT (${audience}):
-${JSON.stringify(example, null, 2)}
-
-REQUIRED OUTPUT:
-Return ONLY valid JSON matching this structure:
 {
-  "brand": "string - brand name",
-  "audience": "string - merchant|consumer|b2b",
-  "pageGoal": "string - conversion goal",
-  "hero": {
-    "headline": "string - compelling headline",
-    "subheadline": "string - supporting description",
-    "primaryCTA": {"label": "string", "href": "#action"},
-    "secondaryCTA": {"label": "string", "href": "#action2"}
-  },
-  "stats": [{"value": "string", "label": "string"}],
-  "sections": [
-    {
-      "type": "benefits|testimonials|faq|features",
-      "title": "string",
-      "items": [{"title": "string", "body": "string"}]
-    }
-  ],
-  "closingCTA": {
-    "headline": "string",
-    "body": "string", 
-    "primaryCTA": {"label": "string", "href": "#action"}
-  }
-}
+  "hook": "main attention grabber from ad",
+  "intent": "book|buy|signup|download|contact|learn",
+  "audienceTone": "casual|professional|luxury|budget|urgent",
+  "emotionalTrigger": "FOMO|trust|convenience|status|speed|savings",
+  "offerType": "discount|free_trial|guarantee|exclusive|limited_time",
+  "visualStyle": "minimal|bold|playful|corporate|premium",
+  "benefit1": "key benefit from ad",
+  "benefit2": "second benefit from ad",
+  "socialProof": "any numbers or testimonials in ad"
+}`;
 
-CRITICAL: Return ONLY valid JSON - no markdown fences, no extra text.`;
-}
-
-// 🚀 SMART SPEC PARSER
-function safeParseSpec(text: string, brandName: string, audience: string, isMerchant: boolean) {
   try {
-    const rawSpec = JSON.parse(text);
-    
-    // Validate has required fields
-    if (!rawSpec.hero?.headline || !rawSpec.stats) {
-      throw new Error('Missing required fields');
-    }
-    
-    return {
-      spec: normalizeSpec(rawSpec, brandName, isMerchant),
-      report: { valid: true, issues: [] },
-      qualityScore: calculateQualityScore(normalizeSpec(rawSpec, brandName, isMerchant)),
-    };
-  } catch (error) {
-    console.log('JSON parse/validation failed:', error.message);
-    return {
-      spec: generateSmartFallback(brandName, audience, '', isMerchant),
-      report: { valid: false, issues: [error.message] },
-      qualityScore: 70,
-    };
+    const result = await tryAI(prompt);
+    const parsed = JSON.parse(extractJSON(result));
+    return parsed;
+  } catch {
+    return extractFromAdManual(adContent, brandName);
   }
 }
 
-
-
-// 🚀 SPEC NORMALIZATION
-function normalizeSpec(rawSpec: any, brandName: string, isMerchant: boolean) {
+function extractFromAdManual(adContent: string, brandName: string): any {
+  const lower = adContent.toLowerCase();
   return {
-    brand: rawSpec.brand || brandName,
-    audience: rawSpec.audience || (isMerchant ? 'merchant' : 'consumer'),
-    pageGoal: rawSpec.pageGoal || 'Drive conversions',
-    hero: {
-      headline: rawSpec.hero?.headline || `${brandName} - ${isMerchant ? 'Grow Your Business' : 'Premium Service'}`,
-      subheadline: rawSpec.hero?.subheadline || `Discover ${brandName} services tailored for your ${isMerchant ? 'business' : 'needs'}`,
-      primaryCTA: rawSpec.hero?.primaryCTA || { label: 'Get Started', href: '#signup' },
-      secondaryCTA: rawSpec.hero?.secondaryCTA || { label: 'Learn More', href: '#learn' },
-    },
-    stats: Array.isArray(rawSpec.stats) ? rawSpec.stats.slice(0, 3) : (isMerchant 
-      ? [
-          { value: '500K+', label: 'Active Merchants' },
-          { value: '300%', label: 'Revenue Increase' },
-          { value: '99.9%', label: 'Platform Uptime' },
-        ]
-      : [
-          { value: '50K+', label: 'Partners' },
-          { value: '25M+', label: 'Orders' },
-          { value: '30min', label: 'Avg Delivery' },
-        ]
-    ),
-    sections: Array.isArray(rawSpec.sections) ? rawSpec.sections.slice(0, 4) : generateDefaultSections(isMerchant),
-    closingCTA: rawSpec.closingCTA || {
-      headline: isMerchant ? 'Ready to Grow Your Business?' : 'Ready to Get Started?',
-      body: isMerchant 
-        ? 'Join thousands of businesses already growing with us.'
-        : 'Join millions of satisfied customers today.',
-      primaryCTA: { label: 'Get Started', href: '#signup' },
-    },
+    hook: adContent.substring(0, 60),
+    intent: lower.includes('buy') || lower.includes('order') ? 'buy' : 
+           lower.includes('signup') || lower.includes('join') ? 'signup' : 'learn',
+    audienceTone: lower.includes('$') || lower.includes('save') ? 'budget' : 'professional',
+    emotionalTrigger: lower.includes('fast') || lower.includes('quick') ? 'speed' : 'trust',
+    offerType: lower.includes('free') ? 'free_trial' : 
+            lower.includes('%') || lower.includes('off') ? 'discount' : 'value',
+    visualStyle: 'modern',
+    benefit1: 'Premium service',
+    benefit2: 'Fast delivery',
+    socialProof: 'Thousands of customers',
   };
 }
 
-function generateDefaultSections(isMerchant: boolean) {
-  if (isMerchant) {
-    return [
-      {
-        type: 'benefits',
-        title: 'Grow Your Business',
-        items: [
-          { title: 'Expand Reach', body: 'Access millions of new customers through our platform.' },
-          { title: 'Boost Revenue', body: 'Increase sales with proven tools and strategies.' },
-          { title: 'Expert Support', body: 'Get dedicated support from our merchant success team.' },
-        ],
-      },
-    ];
+// ============ STAGE 2: PAGE ANALYZER ============
+async function stage2AnalyzePage(url: string, brandName: string, audience: string) {
+  const prompt = `Analyze this brand/URL and return ONLY valid JSON:
+
+URL: ${url}
+Brand: ${brandName}
+
+{
+  "brand": "exact brand name",
+  "currentHero": "existing positioning if known",
+  "existingCTAs": ["main CTAs from brand"],
+  "trustSignals": ["any known trust signals"],
+  "pageTone": "salesy|informational|corporate|friendly",
+  "designStyle": "modern|classic|minimal|busy|luxury",
+  "primaryColor": "#hex or brand color if known",
+  "industry": "food|transport|software|retail|service"
+}`;
+
+  try {
+    const result = await tryAI(prompt);
+    const parsed = JSON.parse(extractJSON(result));
+    return { ...parsed, brand: brandName };
+  } catch {
+    return {
+      brand: brandName,
+      currentHero: '',
+      existingCTAs: ['Learn More', 'Get Started'],
+      trustSignals: ['Rated 5 stars'],
+      pageTone: audience === 'merchant' ? 'corporate' : 'friendly',
+      designStyle: 'modern',
+      primaryColor: '#000000',
+      industry: inferIndustry(url),
+    };
   }
-  return [
-    {
-      type: 'benefits',
-      title: 'Why Choose Us',
-      items: [
-        { title: 'Quality Service', body: 'We deliver exceptional results.' },
-        { title: 'Easy to Use', body: 'Simple, intuitive experience.' },
-        { title: '24/7 Support', body: 'Always here when you need us.' },
-      ],
+}
+
+function inferIndustry(url: string): string {
+  const lower = url.toLowerCase();
+  if (lower.includes('food') || lower.includes('eat') || lower.includes('restaurant')) return 'food';
+  if (lower.includes('taxi') || lower.includes('ride') || lower.includes('uber')) return 'transport';
+  if (lower.includes('shop') || lower.includes('store')) return 'retail';
+  if (lower.includes('software') || lower.includes('app')) return 'software';
+  return 'service';
+}
+
+// ============ STAGE 3: STRATEGIST ============
+async function stage3CreateStrategy(adSignals: any, pageSignals: any, brandName: string, audience: string) {
+  // Map design tokens based on analysis
+  const colorMap: Record<string, string> = {
+    uber: '#FF6B35',
+    doordash: '#FF3008',
+    lyft: '#FF00BF',
+   amazon: '#FF9900',
+   starbucks: '#00704A',
+    default: '#2563eb',
+  };
+  
+  const industryColors: Record<string, string> = {
+    food: '#ea580c',
+    transport: '#7c3aed',
+    retail: '#059669',
+    software: '#0284c7',
+    service: '#6366f1',
+  };
+
+  const colorPrimary = colorMap[brandName.toLowerCase().slice(0,6)] || 
+                      industryColors[pageSignals.industry] || 
+                      '#2563eb';
+
+  const layoutMap: Record<string, string> = {
+    urgent: 'hero-heavy',
+    budget: 'value-focused',
+    luxury: 'asymmetric',
+    professional: 'clean',
+    casual: 'friendly',
+  };
+
+  return {
+    brand: brandName,
+    audienceSegment: adSignals.audienceTone === 'budget' ? 'price-conscious buyers' :
+                  adSignals.audienceTone === 'luxury' ? 'premium customers' :
+                  audience === 'merchant' ? 'business owners' : 'general consumers',
+    primaryHook: adSignals.hook || `${brandName} - Better Way`,
+    audienceTone: adSignals.audienceTone || pageSignals.pageTone,
+    designDirection: {
+      colorPrimary,
+      colorAccent: adjustColor(colorPrimary, 20),
+      gradient: `linear-gradient(135deg, ${colorPrimary}, ${adjustColor(colorPrimary, 30)})`,
+      typography: getTypography(adSignals.visualStyle, pageSignals.designStyle),
+      layout: layoutMap[adSignals.audienceTone] || 'clean',
+      visualDensity: adSignals.visualStyle === 'minimal' ? 'minimal' : 'rich',
     },
-  ];
+    sectionPriority: adSignals.intent === 'buy' ? ['hero', 'social_proof', 'benefits', 'cta'] :
+                   ['hero', 'benefits', 'social_proof', 'cta'],
+    ctaLanguage: getCTAStyle(adSignals.intent),
+    benefits: [adSignals.benefit1, adSignals.benefit2, 'Premium Quality'],
+    socialProof: adSignals.socialProof || 'Thousands of satisfied customers',
+  };
 }
 
-// 🚀 UTILITY FUNCTIONS
-function extractBrand(url: string): string {
-  try {
-    const hostname = new URL(url).hostname
-      .replace('www.', '')
-      .replace('.com', '')
-      .replace('.qa', '')
-      .replace(/-/g, ' ')
-      .trim();
-
-    if (hostname.includes('limousine') || hostname.includes('astar')) {
-      return 'A-Star Limousine';
-    }
-    if (hostname.includes('doordash')) {
-      return 'DoorDash';
-    }
-    if (hostname.includes('uber')) {
-      return 'Uber';
-    }
-
-    return hostname.charAt(0).toUpperCase() + hostname.slice(1) || 'Premium Service';
-  } catch {
-    return 'Premium Service';
-  }
+function getTypography(adStyle: string, pageStyle: string): string {
+  if (adStyle === 'premium' || pageStyle === 'luxury') return 'serif';
+  if (adStyle === 'playful') return 'rounded';
+  return 'sans';
 }
 
-function detectAudience(url: string, targetAudience?: string): string {
-  // Use explicit audience if provided
-  if (targetAudience && targetAudience !== 'auto') {
-    return targetAudience;
-  }
-  
-  try {
-    const hostname = new URL(url).hostname.toLowerCase();
-    if (hostname.includes('shop') || hostname.includes('store') || hostname.includes('retail')) return 'consumer';
-    if (hostname.includes('business') || hostname.includes('enterprise') || hostname.includes('merchant') || hostname.includes('partner')) return 'merchant';
-    if (hostname.includes('b2b') || hostname.includes('pro')) return 'b2b';
-    return 'consumer';
-  } catch {
-    return 'consumer';
-  }
+function getCTAStyle(intent: string): string {
+  const ctaMap: Record<string, string> = {
+    buy: 'urgent',
+    signup: 'trust_building',
+    download: 'benefit_focused',
+    contact: 'friendly',
+  };
+  return ctaMap[intent] || 'professional';
 }
 
-function calculateQualityScore(spec: any): number {
-  let score = 60;
-
-  if (spec.brand && spec.brand !== 'Unknown' && spec.brand !== 'Premium Service') {
-    score += 15;
-  }
-
-  if (spec.hero?.headline && spec.hero.headline.length > 10) {
-    score += 10;
-  }
-
-  if (spec.hero?.primaryCTA?.label && spec.hero.primaryCTA.label.length > 3) {
-    score += 5;
-  }
-
-  if (spec.stats?.length >= 3) {
-    score += 5;
-  }
-
-  const sectionsScore = Math.min((spec.sections?.length || 0) * 5, 20);
-  score += sectionsScore;
-
-  return Math.min(score, 100);
+function adjustColor(hex: string, percent: number): string {
+  // Simple lighten/darken
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
 }
 
-// 🚀 SMART FALLBACK - generates content based on brand and ad input
-function generateSmartFallback(brandName: string, audience: string, adContent: string, isMerchant: boolean) {
-  // Extract key terms from ad content if provided
-  const adTerms = adContent.toLowerCase();
-  
-  // Build custom content from ad if available
-  const customHooks = extractHooksFromAd(adContent, brandName, isMerchant);
+// ============ STAGE 4: SPEC GENERATOR ============
+function stage4GenerateSpec(strategy: any, adSignals: any, pageSignals: any, brandName: string, audience: string) {
+  const isMerchant = audience === 'merchant' || audience === 'b2b';
+  const design = strategy.designDirection;
   
   return {
     brand: brandName,
-    audience: isMerchant ? 'merchant' : 'consumer',
-    pageGoal: isMerchant ? 'Get more restaurant signups' : 'Get more orders/signups',
+    audience: audience,
+    pageGoal: isMerchant ? 'Get more signups' : 'Drive conversions',
+    designTokens: design,
     hero: {
-      headline: customHooks.headline || (isMerchant ? `Grow Your Business with ${brandName}` : `${brandName} - Your Favorite, Delivered`),
-      subheadline: customHooks.subheadline || `Join ${isMerchant ? 'thousands of businesses' : 'millions of customers'} already using ${brandName}.`,
-      primaryCTA: { label: isMerchant ? 'Get Started Free' : 'Order Now', href: '#signup' },
-      secondaryCTA: { label: isMerchant ? 'Schedule Demo' : 'Learn More', href: '#learn' },
+      headline: strategy.primaryHook,
+      subheadline: `${strategy.audienceSegment} - ${adSignals.emotionalTrigger} with ${brandName}. ${strategy.benefits[0]}.`,
+      primaryCTA: { label: getPrimaryCTA(strategy.ctaLanguage), href: '#action' },
+      secondaryCTA: { label: 'Learn More', href: '#learn' },
     },
-    stats: isMerchant 
-      ? [
-          { value: '500K+', label: 'Active Merchants' },
-          { value: '300%', label: 'Avg Revenue Increase' },
-          { value: '99.9%', label: 'Platform Uptime' },
-        ]
-      : [
-          { value: '50K+', label: 'Restaurant Partners' },
-          { value: '25M+', label: 'Orders Delivered' },
-          { value: '30min', label: 'Avg Delivery Time' },
+    stats: generateStats(brandName, isMerchant),
+    sections: [
+      {
+        type: 'benefits',
+        title: isMerchant ? `Why ${brandName}?` : `Choose ${brandName}`,
+        items: strategy.benefits.map((b: string, i: number) => ({
+          title: b,
+          body: isMerchant ? `Grow your business with ${brandName}'s proven platform.` : `Experience the difference with ${brandName}.`,
+        })),
+      },
+      {
+        type: 'testimonials',
+        title: `${strategy.socialProof}`,
+        items: [
+          { title: 'Happy Customer', body: `"${brandName} changed everything for us."` },
+          { title: 'Business Owner', body: `"Best investment we've made."` },
         ],
-    sections: isMerchant 
-      ? [
-          {
-            type: 'benefits',
-            title: 'Grow Your Restaurant Business',
-            items: [
-              { title: 'Expand Customer Reach', body: 'Access millions of new customers through our delivery network.' },
-              { title: 'Streamline Operations', body: 'Automate order management and focus on what you do best.' },
-              { title: 'Boost Revenue', body: 'Increase off-premise sales with our proven platform.' },
-              { title: 'Professional Support', body: 'Get dedicated support and powerful tools to optimize performance.' },
-            ],
-          },
-          {
-            type: 'testimonials', 
-            title: 'Join Thousands of Successful Restaurants',
-            items: [
-              { title: 'Restaurant Owner', body: `Since joining ${brandName}, our sales have doubled. Great platform!` },
-              { title: 'Business Owner', body: `The best decision we made. ${brandName} delivers real results.` },
-            ],
-          },
-          {
-            type: 'faq',
-            title: isMerchant ? 'Merchant Questions' : 'Common Questions',
-            items: [
-              { title: 'How do I get started?', body: `Sign up online in minutes. Our team will help you get set up fast.` },
-              { title: 'What are the costs?', body: 'Transparent pricing with no hidden fees.' },
-              { title: 'What support do you provide?', body: '24/7 support, dedicated account management, and performance tools.' },
-            ],
-          },
-        ]
-      : [
-          {
-            type: 'benefits',
-            title: `Why Choose ${brandName}`,
-            items: [
-              { title: 'Huge Selection', body: 'Access thousands of local restaurants all in one app.' },
-              { title: 'Fast Delivery', body: 'Get your food delivered hot and fresh fast.' },
-              { title: 'Easy Tracking', body: 'Track your order in real-time.' },
-              { title: 'Great Deals', body: 'Discover exclusive deals and promotions.' },
-            ],
-          },
+      },
+      {
+        type: 'faq',
+        title: isMerchant ? 'Merchant Questions' : 'Common Questions',
+        items: [
+          { title: 'How do I start?', body: `Sign up today - it only takes minutes.` },
+          { title: 'What if I need help?', body: 'Our support team is here 24/7.' },
         ],
+      },
+    ],
     closingCTA: {
-      headline: isMerchant ? 'Ready to Grow Your Business?' : 'Ready to Get Started?',
-      body: isMerchant 
-        ? `Join the ${brandName} merchant network today.`
-        : `Get started with ${brandName} today.`,
-      primaryCTA: { label: isMerchant ? 'Get Started Free' : 'Order Now', href: '#signup' },
+      headline: isMerchant ? `Grow with ${brandName}` : `Ready to get started?`,
+      body: `Join ${strategy.socialProof.toLowerCase()}.`,
+      primaryCTA: { label: getPrimaryCTA(strategy.ctaLanguage), href: '#signup' },
     },
   };
 }
 
-// Extract content hooks from ad input
-function extractHooksFromAd(adContent: string, brandName: string, isMerchant: boolean): { headline?: string; subheadline?: string } {
-  if (!adContent || adContent.length < 10) return {};
-  
-  // Extract key phrases from ad
-  const words = adContent.split(/[\s,.!?]+/).filter(w => w.length > 4);
-  const keyPhrases = words.slice(0, 5);
-  
-  // Try to create relevant headlines
-  if (isMerchant) {
-    return {
-      headline: `Grow Your Business with ${brandName}`,
-      subheadline: `${adContent.substring(0, 150)}...`,
-    };
+function getPrimaryCTA(style: string): string {
+  const ctas: Record<string, string> = {
+    urgent: 'Order Now',
+    trust_building: 'Get Started Free',
+    benefit_focused: 'Claim Your Offer',
+    friendly: 'Join Us',
+  };
+  return ctas[style] || 'Get Started';
+}
+
+function generateStats(brandName: string, isMerchant: boolean) {
+  if (brandName.toLowerCase().includes('uber') || brandName.toLowerCase().includes('dash')) {
+    return [
+      { value: '10M+', label: isMerchant ? 'Restaurant Partners' : 'Orders Delivered' },
+      { value: '30min', label: 'Average Delivery' },
+      { value: '4.9★', label: 'App Rating' },
+    ];
   }
+  if (isMerchant) {
+    return [
+      { value: '500K+', label: 'Active Merchants' },
+      { value: '300%', label: 'Avg Revenue Increase' },
+      { value: '99.9%', label: 'Platform Uptime' },
+    ];
+  }
+  return [
+    { value: '50K+', label: 'Happy Customers' },
+    { value: '24/7', label: 'Support' },
+    { value: '4.9★', label: 'Rating' },
+  ];
+}
+
+// ============ AI UTILITIES ============
+async function tryAI(prompt: string): Promise<string> {
+  // Try Groq models
+  if (groq) {
+    for (const model of GROQ_MODELS) {
+      try {
+        const res = await groq.chat.completions.create({
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.2,
+          max_tokens: 800,
+        });
+        const text = res.choices[0]?.message?.content;
+        if (text) return text;
+      } catch (e: any) {
+        console.log(`   Model ${model} failed: ${e.message}`);
+      }
+    }
+  }
+
+  // Try Gemini
+  if (gemini) {
+    for (const modelName of GEMINI_MODELS) {
+      try {
+        const model = gemini.getGenerativeModel({
+          model: modelName,
+          generationConfig: { temperature: 0.2, responseMimeType: 'application/json' },
+        });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        if (text) return text;
+      } catch (e: any) {
+        console.log(`   Gemini ${modelName} failed: ${e.message}`);
+      }
+    }
+  }
+
+  throw new Error('All models failed');
+}
+
+function extractJSON(text: string): string {
+  // Remove markdown
+  text = text.replace(/```json/g, '').replace(/```/g, '');
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    return text.substring(firstBrace, lastBrace + 1);
+  }
+  return text;
+}
+
+// ============ FALLBACK ============
+function generateIntelligentFallback(brandName: string, audience: string, adContent: string): any {
+  const isMerchant = audience === 'merchant';
+  const hook = adContent?.length > 20 ? adContent.substring(0, 60) : `${brandName} - Better Way`;
   
   return {
-    headline: `${brandName}: ${keyPhrases[0] || 'Premium Service'}`,
-    subheadline: adContent.substring(0, 150),
+    brand: brandName,
+    audience,
+    designTokens: { colorPrimary: '#2563eb', gradient: 'linear-gradient(135deg, #2563eb, #3b82f6)' },
+    hero: {
+      headline: hook,
+      subheadline: `Join thousands using ${brandName}. Get started today.`,
+      primaryCTA: { label: 'Get Started', href: '#signup' },
+      secondaryCTA: { label: 'Learn More', href: '#learn' },
+    },
+    stats: generateStats(brandName, isMerchant),
+    sections: [
+      { type: 'benefits', title: `Why ${brandName}?`, items: [{ title: 'Premium Service', body: 'Quality you can trust' }, { title: 'Easy to Use', body: 'Simple and intuitive' }, { title: '24/7 Support', body: 'We are here to help' }] },
+    ],
+    closingCTA: { headline: `Ready to start?`, body: `Join ${brandName} today.`, primaryCTA: { label: 'Get Started', href: '#signup' } },
   };
+}
+
+// ============ UTILITIES ============
+function extractBrand(url: string): string {
+  try {
+    const hostname = new URL(url).hostname.replace('www.', '').split('.')[0];
+    const brands: Record<string, string> = { uber: 'Uber', doordash: 'DoorDash', amazon: 'Amazon', lyft: 'Lyft' };
+    return brands[hostname] || hostname.charAt(0).toUpperCase() + hostname.slice(1);
+  } catch {
+    return 'Your Brand';
+  }
+}
+
+function detectAudience(url: string, explicit?: string): string {
+  if (explicit && explicit !== 'auto') return explicit;
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.includes('business') || hostname.includes('merchant') || hostname.includes('partner')) return 'merchant';
+    return 'consumer';
+  } catch {
+    return 'consumer';
+  }
+}
+
+function calculateQuality(spec: any, adSignals: any, strategy: any): number {
+  let score = 70;
+  if (spec.hero?.headline?.length > 20) score += 10;
+  if (spec.sections?.length >= 2) score += 10;
+  if (spec.designTokens?.colorPrimary) score += 10;
+  return Math.min(score, 100);
 }
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const id = searchParams.get('id') || searchParams.get('preview');
-
+  const id = searchParams.get('id');
   if (!id || !PREVIEWS[id]) {
     return NextResponse.json({ error: 'Preview expired' }, { status: 404 });
   }
-
   return NextResponse.json(PREVIEWS[id]);
 }

@@ -1,5 +1,15 @@
 import React from 'react';
 
+// Helper to adjust color brightness
+function adjustColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+}
+
 interface LandingPageRendererProps {
   spec: any;
   brand?: string;
@@ -15,6 +25,9 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
   }
 
   const pageBrand = brand || spec.brand || 'Your Business';
+  const design = spec.designTokens || {};
+  const primary = design.colorPrimary || '#2563eb';
+  const gradient = design.gradient || `linear-gradient(135deg, ${primary}, ${adjustColor(primary, 20)})`;
 
   return (
     <div style={{
@@ -25,9 +38,9 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       lineHeight: 1.6,
     }}>
-      {/* Hero Section */}
+      {/* Hero Section - Dynamic Colors */}
       <section style={{
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+        background: gradient,
         color: 'white',
         padding: '80px 20px',
         textAlign: 'center',
@@ -106,7 +119,7 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
                 </div>
                 <div style={{
                   fontSize: '16px',
-                  color: '#64748b',
+                  color: primary,
                 }}>
                   {stat.label || ''}
                 </div>
@@ -190,7 +203,7 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
       {/* Closing CTA */}
       {spec.closingCTA && (
         <section style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+          background: gradient,
           color: 'white',
           padding: '60px 20px',
           textAlign: 'center',

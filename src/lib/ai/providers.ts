@@ -14,14 +14,15 @@ export const geminiClient = process.env.GEMINI_API_KEY
 
 export const GROQ_MODELS = [
   process.env.GROQ_MODEL,
-  'llama-3.2-90b-versatile',
   'llama-3.1-70b-versatile',
   'llama-3.1-8b-instant',
+  'mixtral-8x7b-32768',
+  'llama3-70b-8192',
 ].filter(Boolean) as string[];
 
 export const GEMINI_MODELS = [
   process.env.GEMINI_MODEL,
-  'gemini-2.0-flash-exp',
-  'gemini-1.5-pro',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash-8b',
   'gemini-1.5-flash',
 ].filter(Boolean) as string[];
