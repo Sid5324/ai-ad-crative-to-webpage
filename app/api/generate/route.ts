@@ -12,8 +12,67 @@ const groq = process.env.GROQ_API_KEY ? new OpenAI({
 
 const gemini = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
-const GROQ_MODELS = ['llama-3.1-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
-const GEMINI_MODELS = ['gemini-1.5-flash-8b', 'gemini-1.5-flash'];
+const GROQ_MODELS = ['llama-3.1-8b-instant', 'llama3-70b-8192', 'mixtral-8x7b-32768'];
+const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash-8b', 'gemini-1.5-flash'];
+
+const BRAND_TEMPLATES: Record<string, any> = {
+  uber: {
+    name: 'Uber',
+    colors: { primary: '#FF6B35', gradient: 'linear-gradient(135deg, #FF6B35, #FDBA74)' },
+    voice: 'casual_urgent',
+    heroHeadlines: ['Where To?', 'Ride in Minutes', 'Tap and Go'],
+    heroSubheads: ['Get there fast with reliable rides.', 'Your driver is on the way.'],
+    stats: [
+      { value: '10B+', label: 'Trips Completed' },
+      { value: '15min', label: 'Avg Pickup Time' },
+      { value: '4.9★', label: 'App Rating' }
+    ],
+    ctaPrimary: 'Get a Ride',
+    ctaSecondary: 'Learn More',
+  },
+  doordash: {
+    name: 'DoorDash',
+    colors: { primary: '#FF3008', gradient: 'linear-gradient(135deg, #FF3008, #FF8A80)' },
+    voice: 'merchant_focused',
+    heroHeadlines: ['Delivery or Pickup', 'Grow Your Restaurant', 'Reach More Customers'],
+    heroSubheads: ['From restaurant to door - fast delivery.', 'Join 500K+ restaurants growing with us.'],
+    stats: [
+      { value: '500K+', label: 'Restaurants' },
+      { value: '15M+', label: 'Monthly Orders' },
+      { value: '4.8★', label: 'App Rating' }
+    ],
+    ctaPrimary: 'Get Started',
+    ctaSecondary: 'Schedule Demo',
+  },
+  lyft: {
+    name: 'Lyft',
+    colors: { primary: '#FF00BF', gradient: 'linear-gradient(135deg, #FF00BF, #FF66D9)' },
+    voice: 'friendly_casual',
+    heroHeadlines: ['Ride. Done.', 'Go Wherever'],
+    heroSubheads: [' Affordable rides in minutes.'],
+    stats: [
+      { value: '20M+', label: 'Rides' },
+      { value: '5min', label: 'Avg Pickup' },
+      { value: '4.8★', label: 'Rating' }
+    ],
+    ctaPrimary: 'Ride Now',
+    ctaSecondary: 'Explore',
+  },
+  amazon: {
+    name: 'Amazon',
+    colors: { primary: '#FF9900', gradient: 'linear-gradient(135deg, #FF9900, #FFB84D)' },
+    voice: 'value_oriented',
+    heroHeadlines: ['Deliver More', 'Grow Your Business'],
+    heroSubheads: ['Reach millions of customers.'],
+    stats: [
+      { value: '300M+', label: 'Active Customers' },
+      { value: '200+', label: 'Countries' },
+      { value: '4.5★', label: 'Rating' }
+    ],
+    ctaPrimary: 'Start Selling',
+    ctaSecondary: 'Learn More',
+  },
+};
 
 const PREVIEWS: Record<string, any> = {};
 
@@ -135,18 +194,33 @@ AD: ${adContent}
 
 function extractFromAdManual(adContent: string, brandName: string): any {
   const lower = adContent.toLowerCase();
+  // FIXED: Generate REAL copy, not field descriptions
+  const intent = lower.includes('buy') || lower.includes('order') ? 'buy' : 
+                 lower.includes('signup') || lower.includes('join') ? 'signup' : 'learn';
+  const isFast = lower.includes('fast') || lower.includes('quick') || lower.includes('15 min') || lower.includes('minutes');
+  const isSave = lower.includes('$') || lower.includes('save') || lower.includes('discount') || lower.includes('%');
+  
+  // Generate actual headlines based on content, not placeholders
+  let hook = adContent.length > 10 ? adContent.substring(0, 60) : `${brandName} - Fast & Reliable`;
+  // Make it sound like real marketing
+  if (isFast) {
+    hook = hook.includes('fast') ? hook : `Fast ${brandName} Delivery`;
+  }
+  if (isSave && !hook.includes('save')) {
+    hook = `Save with ${brandName}`;
+  }
+  
   return {
-    hook: adContent.substring(0, 60),
-    intent: lower.includes('buy') || lower.includes('order') ? 'buy' : 
-           lower.includes('signup') || lower.includes('join') ? 'signup' : 'learn',
-    audienceTone: lower.includes('$') || lower.includes('save') ? 'budget' : 'professional',
-    emotionalTrigger: lower.includes('fast') || lower.includes('quick') ? 'speed' : 'trust',
+    hook: hook,
+    intent: intent,
+    audienceTone: isSave ? 'budget' : 'professional',
+    emotionalTrigger: isFast ? 'speed' : 'trust',
     offerType: lower.includes('free') ? 'free_trial' : 
-            lower.includes('%') || lower.includes('off') ? 'discount' : 'value',
+             isSave ? 'discount' : 'value',
     visualStyle: 'modern',
-    benefit1: 'Premium service',
-    benefit2: 'Fast delivery',
-    socialProof: 'Thousands of customers',
+    benefit1: isFast ? 'Lightning Fast Delivery' : 'Premium Quality Service',
+    benefit2: isSave ? 'Great Savings Every Day' : 'Available 24/7',
+    socialProof: 'Join 500K+ happy customers',
   };
 }
 
@@ -197,13 +271,13 @@ function inferIndustry(url: string): string {
 
 // ============ STAGE 3: STRATEGIST ============
 async function stage3CreateStrategy(adSignals: any, pageSignals: any, brandName: string, audience: string) {
-  // Map design tokens based on analysis
+  // Map design tokens based on analysis - FIXED: proper brand key lookup
   const colorMap: Record<string, string> = {
     uber: '#FF6B35',
     doordash: '#FF3008',
     lyft: '#FF00BF',
-   amazon: '#FF9900',
-   starbucks: '#00704A',
+    amazon: '#FF9900',
+    starbucks: '#00704A',
     default: '#2563eb',
   };
   
@@ -215,9 +289,17 @@ async function stage3CreateStrategy(adSignals: any, pageSignals: any, brandName:
     service: '#6366f1',
   };
 
-  const colorPrimary = colorMap[brandName.toLowerCase().slice(0,6)] || 
-                      industryColors[pageSignals.industry] || 
-                      '#2563eb';
+  // Fix: proper brand key detection
+  const brandLower = brandName.toLowerCase();
+  let brandKey = brandLower;
+  if (brandLower.includes('uber') && !brandLower.includes('doordash')) brandKey = 'uber';
+  else if (brandLower.includes('dash')) brandKey = 'doordash';
+  else if (brandLower.includes('lyft')) brandKey = 'lyft';
+  else if (brandLower.includes('amazon')) brandKey = 'amazon';
+
+  const colorPrimary = colorMap[brandKey] || 
+                       industryColors[pageSignals.industry] || 
+                       '#2563eb';
 
   const layoutMap: Record<string, string> = {
     urgent: 'hero-heavy',
@@ -281,6 +363,74 @@ function stage4GenerateSpec(strategy: any, adSignals: any, pageSignals: any, bra
   const isMerchant = audience === 'merchant' || audience === 'b2b';
   const design = strategy.designDirection;
   
+  // Get brand template if available
+  const brandLower = brandName.toLowerCase();
+  let template = null;
+  if (brandLower.includes('uber') && !brandLower.includes('dash')) {
+    template = BRAND_TEMPLATES.uber;
+  } else if (brandLower.includes('dash')) {
+    template = BRAND_TEMPLATES.doordash;
+  } else if (brandLower.includes('lyft')) {
+    template = BRAND_TEMPLATES.lyft;
+  } else if (brandLower.includes('amazon')) {
+    template = BRAND_TEMPLATES.amazon;
+  }
+  
+  // Use template if found, otherwise generate
+  if (template) {
+    const headline = adSignals.hook && adSignals.hook.length > 5 && adSignals.hook !== `${brandName} - Premium Service` 
+      ? adSignals.hook 
+      : template.heroHeadlines[0];
+    const subhead = template.heroSubheads[0];
+    
+    return {
+      brand: template.name,
+      audience: audience,
+      pageGoal: isMerchant ? 'Get more signups' : 'Drive conversions',
+      designTokens: design,
+      hero: {
+        headline: headline,
+        subheadline: subhead,
+        primaryCTA: { label: template.ctaPrimary, href: '#action' },
+        secondaryCTA: { label: template.ctaSecondary, href: '#learn' },
+      },
+      stats: template.stats,
+      sections: [
+        {
+          type: 'benefits',
+          title: `Why ${template.name}?`,
+          items: [
+            { title: template.stats[0].label, body: `Join ${template.stats[0].value} ${template.stats[0].label.toLowerCase()}` },
+            { title: 'Fast Service', body: template.stats[1].label.includes('Pickup') ? template.stats[1].label : 'Quick and reliable delivery' },
+            { title: 'Top Rated', body: `${template.stats[2].value} app` },
+          ],
+        },
+        {
+          type: 'testimonials',
+          title: 'What Our Customers Say',
+          items: [
+            { title: 'Satisfied Customer', body: `"Best service ever. Highly recommend!"` },
+            { title: 'Happy User', body: `"${template.name} made my life so much easier."` },
+          ],
+        },
+        {
+          type: 'faq',
+          title: 'Common Questions',
+          items: [
+            { title: 'How do I get started?', body: 'Download the app or sign up online in minutes.' },
+            { title: 'Is there a fee?', body: 'No hidden fees. Pay only for what you use.' },
+          ],
+        },
+      ],
+      closingCTA: {
+        headline: isMerchant ? `Grow with ${template.name}` : `Ready to get started?`,
+        body: `Join ${template.stats[0].value}+ happy customers today.`,
+        primaryCTA: { label: template.ctaPrimary, href: '#signup' },
+      },
+    };
+  }
+  
+  // Non-template fallback - generate as before
   return {
     brand: brandName,
     audience: audience,
@@ -413,7 +563,21 @@ function extractJSON(text: string): string {
 // ============ FALLBACK ============
 function generateIntelligentFallback(brandName: string, audience: string, adContent: string): any {
   const isMerchant = audience === 'merchant';
-  const hook = adContent?.length > 20 ? adContent.substring(0, 60) : `${brandName} - Better Way`;
+  // FIXED: Generate real copy, not field names
+  const lower = adContent?.toLowerCase() || '';
+  const isFast = lower.includes('fast') || lower.includes('quick') || lower.includes('15') || lower.includes('min');
+  const isSave = lower.includes('$') || lower.includes('save') || lower.includes('discount');
+  
+  let hook = '';
+  if (adContent?.length > 10) {
+    hook = adContent.substring(0, 60);
+  } else if (isFast) {
+    hook = `${brandName} - Fast & Reliable`;
+  } else if (isSave) {
+    hook = `Save Big with ${brandName}`;
+  } else {
+    hook = `${brandName} - Premium Service`;
+  }
   
   return {
     brand: brandName,

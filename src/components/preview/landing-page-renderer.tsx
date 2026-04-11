@@ -1,6 +1,41 @@
 import React from 'react';
 
-// Helper to adjust color brightness
+const styles = `
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(30px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
+  .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+  .scale-in { animation: scaleIn 0.5s ease-out forwards; }
+  .slide-left { animation: slideInLeft 0.5s ease-out forwards; }
+  .slide-right { animation: slideInRight 0.5s ease-out forwards; }
+  .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+  .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+  .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+  .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+  .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .card-hover:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.15); }
+  .btn-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  .btn-hover:hover { transform: translateY(-2px); }
+`;
+
 function adjustColor(hex: string, percent: number): string {
   const num = parseInt(hex.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
@@ -16,6 +51,19 @@ interface LandingPageRendererProps {
 }
 
 export default function LandingPageRenderer({ spec, brand }: LandingPageRendererProps) {
+  // Inject styles
+  React.useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const styleId = 'renderer-animations';
+      if (!document.getElementById(styleId)) {
+        const styleEl = document.createElement('style');
+        styleEl.id = styleId;
+        styleEl.textContent = styles;
+        document.head.appendChild(styleEl);
+      }
+    }
+  }, []);
+
   if (!spec) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
@@ -35,91 +83,104 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
       minHeight: '100vh',
       backgroundColor: '#ffffff',
       color: '#000000',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif',
       lineHeight: 1.6,
     }}>
       {/* Hero Section - Dynamic Colors */}
       <section style={{
         background: gradient,
         color: 'white',
-        padding: '80px 20px',
+        padding: 'clamp(60px, 8vw, 120px) 20px',
         textAlign: 'center',
+        minHeight: '70vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto' }} className="fade-in-up">
           <h1 style={{
-            fontSize: 'clamp(32px, 5vw, 48px)',
-            fontWeight: 'bold',
-            marginBottom: '16px',
-            lineHeight: 1.2,
+            fontSize: 'clamp(36px, 6vw, 56px)',
+            fontWeight: '800',
+            marginBottom: '20px',
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
           }}>
             {spec.hero?.headline || `${pageBrand} - Premium Service`}
           </h1>
           <p style={{
-            fontSize: '18px',
-            marginBottom: '32px',
-            opacity: 0.9,
+            fontSize: 'clamp(18px, 2.5vw, 22px)',
+            marginBottom: '36px',
+            opacity: 0.92,
+            lineHeight: 1.5,
+            maxWidth: '700px',
+            margin: '0 auto 36px',
           }}>
             {spec.hero?.subheadline || 'Discover premium services tailored for you'}
           </p>
-          {spec.hero?.primaryCTA && (
-            <button style={{
-              backgroundColor: 'white',
-              color: '#1e3a8a',
-              border: 'none',
-              padding: '14px 28px',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              marginRight: '12px',
-            }}>
-              {spec.hero.primaryCTA.label || 'Get Started'}
-            </button>
-          )}
-          {spec.hero?.secondaryCTA && (
-            <button style={{
-              backgroundColor: 'transparent',
-              color: 'white',
-              border: '2px solid white',
-              padding: '12px 26px',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-            }}>
-              {spec.hero.secondaryCTA.label || 'Learn More'}
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {spec.hero?.primaryCTA && (
+              <button className="btn-hover" style={{
+                backgroundColor: 'white',
+                color: primary,
+                border: 'none',
+                padding: '16px 36px',
+                borderRadius: '10px',
+                fontSize: '17px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+              }}>
+                {spec.hero.primaryCTA.label || 'Get Started'}
+              </button>
+            )}
+            {spec.hero?.secondaryCTA && (
+              <button className="btn-hover" style={{
+                backgroundColor: 'transparent',
+                color: 'white',
+                border: '2px solid rgba(255,255,255,0.7)',
+                padding: '14px 34px',
+                borderRadius: '10px',
+                fontSize: '17px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}>
+                {spec.hero.secondaryCTA.label || 'Learn More'}
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
       {/* Stats Section */}
       {spec.stats && spec.stats.length > 0 && (
         <section style={{
-          padding: '60px 20px',
+          padding: 'clamp(50px, 6vw, 80px) 20px',
           backgroundColor: '#f8fafc',
           textAlign: 'center',
         }}>
           <div style={{
-            maxWidth: '1000px',
+            maxWidth: '1100px',
             margin: '0 auto',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '40px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '48px',
           }}>
             {spec.stats.map((stat: any, index: number) => (
-              <div key={index}>
+              <div key={index} className={`fade-in scale-in stagger-${index + 1}`}>
                 <div style={{
-                  fontSize: '36px',
-                  fontWeight: 'bold',
-                  color: '#1e3a8a',
+                  fontSize: 'clamp(32px, 4vw, 44px)',
+                  fontWeight: '800',
+                  color: primary,
                   marginBottom: '8px',
                 }}>
                   {stat.value || '0'}
                 </div>
                 <div style={{
-                  fontSize: '16px',
-                  color: primary,
+                  fontSize: '15px',
+                  color: '#64748b',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontWeight: '600',
                 }}>
                   {stat.label || ''}
                 </div>
@@ -132,16 +193,16 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
       {/* Sections */}
       {spec.sections && spec.sections.map((section: any, index: number) => (
         <section key={index} style={{
-          padding: '60px 20px',
+          padding: 'clamp(50px, 6vw, 80px) 20px',
           backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
         }}>
-          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
             <h2 style={{
-              fontSize: '32px',
-              fontWeight: 'bold',
+              fontSize: 'clamp(28px, 4vw, 38px)',
+              fontWeight: '700',
               color: '#1e293b',
               textAlign: 'center',
-              marginBottom: '40px',
+              marginBottom: '48px',
             }}>
               {section.title || 'Features'}
             </h2>
@@ -149,34 +210,36 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
             {section.items && section.items.length > 0 ? (
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                 gap: '32px',
               }}>
                 {section.items.map((item: any, itemIndex: number) => (
-                  <div key={itemIndex} style={{
+                  <div key={itemIndex} className="card-hover" style={{
                     textAlign: 'center',
-                    padding: '24px',
+                    padding: '32px 28px',
                     backgroundColor: 'white',
-                    borderRadius: '12px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    borderRadius: '16px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    border: '1px solid #e2e8f0',
                   }}>
                     <div style={{
-                      width: '48px',
-                      height: '48px',
-                      backgroundColor: '#3b82f6',
-                      borderRadius: '50%',
-                      margin: '0 auto 16px',
+                      width: '56px',
+                      height: '56px',
+                      backgroundColor: `${primary}15`,
+                      borderRadius: '12px',
+                      margin: '0 auto 20px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: 'white',
+                      color: primary,
                       fontSize: '24px',
+                      fontWeight: 'bold',
                     }}>
-                      ✓
+                      {String.fromCharCode(65 + itemIndex)}
                     </div>
                     <h3 style={{
                       fontSize: '20px',
-                      fontWeight: '600',
+                      fontWeight: '700',
                       color: '#1e293b',
                       marginBottom: '12px',
                     }}>
@@ -184,7 +247,8 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
                     </h3>
                     <p style={{
                       color: '#64748b',
-                      lineHeight: 1.6,
+                      lineHeight: 1.7,
+                      fontSize: '15px',
                     }}>
                       {item.body || 'Description'}
                     </p>
@@ -205,35 +269,36 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
         <section style={{
           background: gradient,
           color: 'white',
-          padding: '60px 20px',
+          padding: 'clamp(60px, 8vw, 100px) 20px',
           textAlign: 'center',
-        }}>
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        }} className="fade-in-up">
+          <div style={{ maxWidth: '700px', margin: '0 auto' }}>
             <h2 style={{
-              fontSize: '32px',
-              fontWeight: 'bold',
+              fontSize: 'clamp(28px, 4vw, 40px)',
+              fontWeight: '800',
               marginBottom: '16px',
+              letterSpacing: '-0.01em',
             }}>
               {spec.closingCTA.headline || 'Ready to Get Started?'}
             </h2>
             <p style={{
-              fontSize: '18px',
-              marginBottom: '32px',
-              opacity: 0.9,
+              fontSize: 'clamp(16px, 2vw, 20px)',
+              marginBottom: '36px',
+              opacity: 0.92,
             }}>
               {spec.closingCTA.body || 'Join thousands of satisfied customers today.'}
             </p>
             {spec.closingCTA.primaryCTA && (
-              <button style={{
+              <button className="btn-hover" style={{
                 backgroundColor: 'white',
-                color: '#1e3a8a',
+                color: primary,
                 border: 'none',
-                padding: '14px 28px',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontWeight: '600',
+                padding: '18px 42px',
+                borderRadius: '10px',
+                fontSize: '18px',
+                fontWeight: '700',
                 cursor: 'pointer',
-                marginRight: '12px',
+                boxShadow: '0 6px 24px rgba(0,0,0,0.2)',
               }}>
                 {spec.closingCTA.primaryCTA.label || 'Get Started'}
               </button>
@@ -244,16 +309,16 @@ export default function LandingPageRenderer({ spec, brand }: LandingPageRenderer
 
       {/* Footer */}
       <footer style={{
-        backgroundColor: '#1e293b',
+        backgroundColor: '#0f172a',
         color: 'white',
-        padding: '40px 20px',
+        padding: 'clamp(40px, 5vw, 60px) 20px',
         textAlign: 'center',
       }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-          <p style={{ marginBottom: '16px', fontSize: '18px', fontWeight: '600' }}>
+          <p style={{ marginBottom: '20px', fontSize: '20px', fontWeight: '700' }}>
             {pageBrand}
           </p>
-          <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+          <p style={{ color: '#64748b', fontSize: '14px' }}>
             © 2024 {pageBrand}. All rights reserved.
           </p>
         </div>
