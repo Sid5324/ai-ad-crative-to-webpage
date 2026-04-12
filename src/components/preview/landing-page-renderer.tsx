@@ -1,7 +1,5 @@
 'use client';
 
-import { BrandSpec } from '@/lib/brand-engine';
-
 interface RendererProps {
   spec: any;
 }

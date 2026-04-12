@@ -1,130 +1,139 @@
-// src/app/api/generate/route.ts - Brand Engine Production Route
+// src/app/api/generate/route.ts - AI Content Generation System
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { getBrandSpec, BrandSpec } from '@/lib/brand-engine';
+import { runPersonalizationWorkflow } from '@/lib/workflow';
+import { getBrandDesign } from '@/lib/brand-designs';
 
 const PREVIEWS: Record<string, any> = {};
 
 export async function POST(req: Request) {
-  console.log('🚀 BRAND ENGINE START');
-  
+  console.log('🚀 AI CONTENT GENERATION START');
+
+  const body = await req.json();
+  const input = {
+    adInputType: body.adInputType || 'copy',
+    adInputValue: body.adInputValue || '',
+    targetUrl: body.targetUrl || '',
+    audienceOverride: body.targetAudience || undefined,
+  };
+
   try {
-    const body = await req.json();
-    const input = {
-      adInputValue: body.adInputValue || '',
-      targetUrl: body.targetUrl || '',
-      targetAudience: body.targetAudience || 'consumer',
-      designStyle: body.designStyle || 'auto',
+
+    if (!input.adInputValue || !input.targetUrl) {
+      throw new Error('adInputValue and targetUrl are required');
+    }
+
+    console.log('📋 Input:', input.adInputValue);
+    console.log('🎯 Target:', input.targetUrl);
+
+    // Use AI agents to generate personalized content (not templates!)
+    const result = await runPersonalizationWorkflow(input);
+
+    if (!result.success) {
+      throw new Error('AI content generation failed');
+    }
+
+    // Get design templates (colors, layouts) based on brand detection
+    const design = getBrandDesign(input.targetUrl, result.spec.brand);
+
+    // Combine AI-generated content with design templates
+    const finalSpec = {
+      ...result.spec,
+      designTokens: {
+        colorPrimary: design.colors.primary,
+        gradient: design.colors.gradient,
+        accent: design.colors.accent,
+      },
+      // Use AI-generated content, not template content
+      hero: {
+        headline: result.spec.hero?.headline || 'Professional Service',
+        subheadline: result.spec.hero?.subheadline || 'Quality solutions for your needs',
+        primaryCTA: { label: result.spec.hero?.primaryCTA || 'Get Started', href: '#book' },
+        secondaryCTA: { label: result.spec.hero?.secondaryCTA || 'Learn More', href: '#learn' },
+      },
+      stats: result.spec.stats || design.stats,
+      sections: result.spec.sections || [],
+      closingCTA: result.spec.closingCTA,
     };
 
-    if (!input.targetUrl) {
-      throw new Error('targetUrl is required');
-    }
-
-    console.log('📋 URL:', input.targetUrl);
-
-    // Get professional brand spec (95% quality instantly - NO AI needed)
-    const baseSpec = getBrandSpec(input.targetUrl, input.adInputValue);
-    
-    // Optional: Light customization based on ad keywords
-    let spec = { ...baseSpec };
-    if (input.adInputValue) {
-      const adLower = input.adInputValue.toLowerCase();
-      
-      // Customize headlines based on ad content
-      if (adLower.includes('fast') || adLower.includes('quick') || adLower.includes('15') || adLower.includes('minutes')) {
-        spec.hero.headline = spec.hero.headline.replace('Minutes', 'Lightning Fast');
-      }
-      if (adLower.includes('luxury') || adLower.includes('vip') || adLower.includes('premium')) {
-        spec.hero.headline = 'Premium ' + spec.hero.headline;
-        spec.benefits[0].title = 'VIP Luxury Service';
-      }
-      if (adLower.includes('save') || adLower.includes('$') || adLower.includes('discount')) {
-        spec.hero.headline = 'Save with ' + spec.name;
-        spec.hero.cta = 'Claim Offer';
-      }
-    }
-
-    // Transform to the expected format for the renderer
-    const transformedSpec = transformSpec(spec, input.targetAudience);
-
     const previewId = nanoid(10);
-    PREVIEWS[previewId] = { spec: transformedSpec, brand: spec.name };
+    PREVIEWS[previewId] = { spec: finalSpec, brand: result.spec.brand };
 
-    console.log('✅ BRAND:', spec.name, 'Headline:', spec.hero.headline);
+    console.log('✅ AI Generated Content:');
+    console.log('   Brand:', result.spec.brand);
+    console.log('   Headline:', finalSpec.hero.headline);
+    console.log('   Quality Score:', result.qualityScore);
 
     return NextResponse.json({
       success: true,
       previewId,
-      spec: transformedSpec,
-      qualityScore: 95,
-      engine: 'brand-engine',
+      spec: finalSpec,
+      qualityScore: result.qualityScore,
+      engine: 'ai-content-generation',
       debug: {
-        brand: spec.name,
-        colors: spec.colors.primary,
-        headline: spec.hero.headline,
+        brand: result.spec.brand,
+        audience: result.audienceResolution?.resolved,
+        conversionPotential: result.conversionPotential,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      previewId,
+      spec: finalSpec,
+      qualityScore: result.qualityScore,
+      engine: 'ai-content-generation',
+      debug: {
+        brand: result.spec.brand,
+        audience: result.audienceResolution?.resolved,
+        conversionPotential: result.conversionPotential,
       },
     });
 
   } catch (error: any) {
     console.error('❌ ERROR:', error.message);
-    
-    // Brand engine fallback - still professional
-    const fallbackSpec = getBrandSpec('https://example.com');
-    const transformedSpec = transformSpec(fallbackSpec, 'consumer');
-    
+
+    // AI fallback - basic spec with design
+    const design = getBrandDesign(input.targetUrl);
+    const fallbackSpec = {
+      brand: 'Your Business',
+      audience: 'consumer',
+      hero: {
+        headline: 'Professional Service',
+        subheadline: 'Quality solutions for your needs',
+        primaryCTA: { label: 'Get Started', href: '#book' },
+        secondaryCTA: { label: 'Learn More', href: '#learn' },
+      },
+      stats: design.stats,
+      sections: [
+        {
+          type: 'benefits',
+          title: 'Why Choose Us?',
+          items: [
+            { title: 'Quality Service', body: 'Professional solutions you can trust' },
+            { title: 'Expert Team', body: 'Years of experience in our field' },
+          ],
+        },
+      ],
+      designTokens: {
+        colorPrimary: design.colors.primary,
+        gradient: design.colors.gradient,
+        accent: design.colors.accent,
+      },
+    };
+
     return NextResponse.json({
       success: true,
       previewId: nanoid(10),
-      spec: transformedSpec,
-      qualityScore: 85,
-      engine: 'brand-engine-fallback',
+      spec: fallbackSpec,
+      qualityScore: 70,
+      engine: 'ai-fallback',
       debug: { fallback: true, error: error.message },
     });
   }
 }
 
-function transformSpec(brandSpec: BrandSpec, audience: string): any {
-  const isMerchant = audience === 'merchant' || audience === 'b2b';
-  
-  return {
-    brand: brandSpec.name,
-    audience: audience,
-    designTokens: {
-      colorPrimary: brandSpec.colors.primary,
-      gradient: brandSpec.colors.gradient,
-      accent: brandSpec.colors.accent,
-    },
-    hero: {
-      headline: brandSpec.hero.headline,
-      subheadline: brandSpec.hero.subheadline,
-      primaryCTA: { label: brandSpec.hero.cta, href: '#book' },
-      secondaryCTA: { label: 'Learn More', href: '#fleet' },
-    },
-    stats: brandSpec.stats,
-    sections: [
-      {
-        type: 'benefits',
-        title: `Why ${brandSpec.name}?`,
-        items: brandSpec.benefits.map(b => ({ title: b.title, body: b.body })),
-      },
-      {
-        type: 'testimonials',
-        title: 'What Our Clients Say',
-        items: brandSpec.testimonials.map(t => ({ 
-          title: t.name, 
-          body: `"${t.quote}"`,
-          rating: t.rating,
-        })),
-      },
-    ],
-    closingCTA: {
-      headline: isMerchant ? `Grow with ${brandSpec.name}` : `Ready to get started?`,
-      body: `Join ${brandSpec.stats[0].value} ${brandSpec.stats[0].label.toLowerCase()} today.`,
-      primaryCTA: { label: brandSpec.hero.cta, href: '#book' },
-    },
-  };
-}
+
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
