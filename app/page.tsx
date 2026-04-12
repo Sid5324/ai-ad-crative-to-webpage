@@ -266,7 +266,7 @@ export default function Home() {
               overflow: 'auto',
               background: '#ffffff',
             }}>
-              <LandingPageRenderer spec={result.spec} brand={result.debug?.brand} />
+              <LandingPageRenderer spec={result.spec} />
             </div>
           </div>
         )}
