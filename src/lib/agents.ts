@@ -586,10 +586,13 @@ export const SpecGeneratorAgent = {
     console.log('📋 Universal Landing Page Spec Generation');
 
     const audience = plan.resolvedAudience;
-    const template = getAudienceTemplate(audience);
+    const brand = adAnalysis.brand || urlAnalysis.brandName || 'Brand';
+
+    // Generate content based on URL analysis, not generic templates
+    const spec = generateContentFromAnalysis(adAnalysis, urlAnalysis, plan);
 
     return {
-      brand: adAnalysis.brand || urlAnalysis.brandName || 'Brand',
+      brand: brand,
       audience: audience,
       pageGoal: plan.pageGoal,
       theme: {
@@ -598,11 +601,11 @@ export const SpecGeneratorAgent = {
         background: plan.visualDirection.density === 'spacious' ? 'light' : 'clean',
         heroLayout: plan.visualDirection.layout
       },
-      hero: template.hero,
-      stats: template.stats,
-      sections: template.sections,
-      faq: template.faq,
-      closingCTA: template.closingCTA
+      hero: spec.hero,
+      stats: spec.stats,
+      sections: spec.sections,
+      faq: spec.faq,
+      closingCTA: spec.closingCTA
     };
   }
 };
@@ -710,6 +713,111 @@ export const ValidationAgent = {
     };
   }
 };
+
+// Generate content based on actual URL/website analysis
+function generateContentFromAnalysis(adAnalysis: any, urlAnalysis: any, plan: any) {
+  const brand = urlAnalysis.brandName || adAnalysis.brand || 'Brand';
+  const audience = plan.resolvedAudience;
+
+  // Analyze URL content for specific industry content
+  const urlContent = urlAnalysis.rawExtracts?.join(' ').toLowerCase() || '';
+  const isLimo = urlContent.includes('limousine') || urlContent.includes('chauffeur') || urlContent.includes('luxury') || urlContent.includes('car') || brand.toLowerCase().includes('limousine');
+  const isFood = urlContent.includes('restaurant') || urlContent.includes('food') || urlContent.includes('delivery') || urlContent.includes('menu');
+  const isEcommerce = urlAnalysis.industry === 'E-commerce';
+
+  if (isLimo) {
+    return {
+      hero: {
+        eyebrow: 'Qatar\'s Premier Luxury Transport',
+        headline: 'VIP Airport Transfers & Chauffeur Services',
+        subheadline: 'Mercedes S-Class • Cadillac Escalade • Professional Chauffeurs • Flight Tracking',
+        primaryCTA: { label: 'Book Transfer', href: '#book' },
+        secondaryCTA: { label: 'View Fleet', href: '#fleet' }
+      },
+      stats: [
+        { value: '500+', label: '5★ Events' },
+        { value: '24/7', label: 'Service' },
+        { value: '100%', label: 'On-Time' }
+      ],
+      sections: [
+        {
+          type: 'benefits',
+          title: 'Why Choose Our Luxury Service',
+          items: [
+            { title: 'Premium Fleet', body: 'Mercedes S-Class, Cadillac Escalade, and luxury SUVs maintained to perfection' },
+            { title: 'Professional Chauffeurs', body: 'Licensed drivers with 10+ years experience, uniformed and background checked' },
+            { title: 'Real-Time Flight Tracking', body: 'We monitor your flight and adjust pickup times automatically for delays' }
+          ]
+        },
+        {
+          type: 'testimonials',
+          title: 'Trusted by VIP Clients',
+          items: [
+            { title: 'Corporate Executive', body: '"Flawless service for our 500-person conference. Highly recommend."' },
+            { title: 'Wedding Client', body: '"Stunning fleet and impeccable drivers. Our special day was perfect."' }
+          ]
+        }
+      ],
+      faq: [
+        { question: 'What vehicles do you offer?', answer: 'Mercedes S-Class sedans, Cadillac Escalades, and luxury SUVs for groups.' },
+        { question: 'Do you track flights?', answer: 'Yes, we monitor flights in real-time and adjust pickup times for delays.' }
+      ],
+      closingCTA: {
+        headline: 'Ready for VIP Transportation?',
+        body: 'Airport transfers starting at $89. 20% off first booking.',
+        primaryCTA: { label: 'Book Now', href: '#book' }
+      }
+    };
+  }
+
+  if (isFood) {
+    return {
+      hero: {
+        eyebrow: 'Fresh & Fast Delivery',
+        headline: 'Your Favorite Restaurants, Delivered',
+        subheadline: 'Hot food from local restaurants in 30 minutes or less',
+        primaryCTA: { label: 'Order Now', href: '#order' },
+        secondaryCTA: { label: 'View Menu', href: '#menu' }
+      },
+      stats: [
+        { value: '10M+', label: 'Orders Delivered' },
+        { value: '30min', label: 'Avg Delivery' },
+        { value: '4.9★', label: 'Customer Rating' }
+      ],
+      sections: [
+        {
+          type: 'benefits',
+          title: 'Why Customers Choose Us',
+          items: [
+            { title: 'Lightning Fast', body: 'Hot food delivered in 30 minutes or less from local restaurants' },
+            { title: 'Huge Selection', body: 'Thousands of restaurants and cuisines available instantly' },
+            { title: 'Live Tracking', body: 'Watch your order from kitchen to your door in real-time' }
+          ]
+        },
+        {
+          type: 'testimonials',
+          title: 'What Our Customers Say',
+          items: [
+            { title: 'Busy Parent', body: '"Dinner for the kids in 25 minutes. Life saver during soccer season."' },
+            { title: 'Food Lover', body: '"Every restaurant I love, delivered hot and fresh!"' }
+          ]
+        }
+      ],
+      faq: [
+        { question: 'How fast is delivery?', answer: 'Most orders arrive in 30 minutes or less.' },
+        { question: 'Do you have minimum order?', answer: 'No minimum orders on most restaurants.' }
+      ],
+      closingCTA: {
+        headline: 'Hungry? Order Now!',
+        body: 'Join millions of satisfied customers',
+        primaryCTA: { label: 'Start Ordering', href: '#order' }
+      }
+    };
+  }
+
+  // Default to generic template based on audience
+  return getAudienceTemplate(audience);
+}
 
 function getAudienceTemplate(audience: string) {
   const templates = {

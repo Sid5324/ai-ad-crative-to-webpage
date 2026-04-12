@@ -34,11 +34,16 @@ export async function POST(req: Request) {
     }
 
     // Get design templates (colors, layouts) based on brand detection
-    const design = getBrandDesign(input.targetUrl, result.spec.brand);
+    // Use AI-detected brand from URL analysis, fallback to spec brand or URL hostname matching
+    const urlBrand = result.debug?.urlAnalysis?.brandName || '';
+    const detectedBrand = urlBrand || (result.spec.brand !== 'Unknown' ? result.spec.brand : '');
+    const design = getBrandDesign(input.targetUrl, detectedBrand);
 
     // Combine AI-generated content with design templates
     const finalSpec = {
       ...result.spec,
+      // Use detected brand from URL analysis, not AI spec
+      brand: detectedBrand || result.spec.brand || design.name,
       designTokens: {
         colorPrimary: design.colors.primary,
         gradient: design.colors.gradient,
@@ -57,10 +62,11 @@ export async function POST(req: Request) {
     };
 
     const previewId = nanoid(10);
-    PREVIEWS[previewId] = { spec: finalSpec, brand: result.spec.brand };
+    PREVIEWS[previewId] = { spec: finalSpec, brand: detectedBrand || result.spec.brand };
 
     console.log('✅ AI Generated Content:');
-    console.log('   Brand:', result.spec.brand);
+    console.log('   Brand:', detectedBrand || result.spec.brand);
+    console.log('   URL Detected:', result.debug?.urlAnalysis?.brandName);
     console.log('   Headline:', finalSpec.hero.headline);
     console.log('   Quality Score:', result.qualityScore);
 
@@ -71,9 +77,11 @@ export async function POST(req: Request) {
       qualityScore: result.qualityScore,
       engine: 'ai-content-generation',
       debug: {
-        brand: result.spec.brand,
+        brand: detectedBrand || result.spec.brand,
+        urlDetectedBrand: result.debug?.urlAnalysis?.brandName,
         audience: result.audienceResolution?.resolved,
         conversionPotential: result.conversionPotential,
+        designUsed: design.name,
       },
     });
 

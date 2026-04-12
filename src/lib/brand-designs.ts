@@ -54,14 +54,27 @@ const BRAND_DESIGNS: Record<string, BrandDesign> = {
 
 export function getBrandDesign(url: string, detectedBrand?: string): BrandDesign {
   const hostname = url.toLowerCase();
+  const brandText = detectedBrand?.toLowerCase() || '';
 
-  if (hostname.includes('uber') || hostname.includes('ubereats') || detectedBrand?.toLowerCase().includes('uber')) {
+  // Check URL first
+  if (hostname.includes('uber') || hostname.includes('ubereats')) {
     return BRAND_DESIGNS.uber;
   }
-  if (hostname.includes('doordash') || detectedBrand?.toLowerCase().includes('doordash')) {
+  if (hostname.includes('doordash')) {
     return BRAND_DESIGNS.doordash;
   }
-  if (hostname.includes('astar') || hostname.includes('limousine') || detectedBrand?.toLowerCase().includes('astar')) {
+  if (hostname.includes('astar') || hostname.includes('limousine') || hostname.includes('chauffeur')) {
+    return BRAND_DESIGNS.astar;
+  }
+
+  // Check detected brand text
+  if (brandText.includes('uber') || brandText.includes('eats')) {
+    return BRAND_DESIGNS.uber;
+  }
+  if (brandText.includes('doordash') || brandText.includes('dash')) {
+    return BRAND_DESIGNS.doordash;
+  }
+  if (brandText.includes('astar') || brandText.includes('limousine') || brandText.includes('chauffeur') || brandText.includes('luxury')) {
     return BRAND_DESIGNS.astar;
   }
 
