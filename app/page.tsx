@@ -6,17 +6,34 @@ import ResultPanel from './components/result-panel';
 import LandingPageRenderer from '@/components/preview/landing-page-renderer';
 import { useInView } from 'react-intersection-observer';
 
-// Convert spec to HTML - DoorDash Quality
+// Convert spec to HTML - DOORDASH REFERENCE QUALITY
 function generateHtmlFromSpec(spec: any, brand?: string): string {
   const pageBrand = brand || spec?.brand || 'Brand';
   const design = spec?.designTokens || {};
   const primary = design.colorPrimary || '#2563eb';
   const gradient = design.gradient || `linear-gradient(135deg, ${primary}, #3b82f6)`;
+  
+  // Detect brand type
   const isLimo = pageBrand.toLowerCase().includes('limousine') || pageBrand.toLowerCase().includes('astar');
+  const isFood = pageBrand.toLowerCase().includes('uber') || pageBrand.toLowerCase().includes('doordash') || pageBrand.toLowerCase().includes('dash');
+  const isMerchant = pageBrand.toLowerCase().includes('merchant') || pageBrand.toLowerCase().includes('restaurant');
+  
+  // Choose eyebrow based on brand type
+  const eyebrowText = isLimo ? 'Qatar\'s #1 Airport Transfer' : 
+                      isFood ? 'Fast Delivery, Great Food' :
+                      isMerchant ? 'Restaurant Growth Partner' :
+                      'Premium Service';
   
   const stats = spec.stats || [];
   const benefits = spec.sections?.find((s: any) => s.type === 'benefits')?.items || [];
   const testimonials = spec.sections?.find((s: any) => s.type === 'testimonials')?.items || [];
+  
+  // Icons mapping based on brand type
+  const getIcon = (i: number) => {
+    if (isLimo) return ['fa-car-side', 'fa-user-tie', 'fa-plane'][i] || 'fa-star';
+    if (isFood) return ['fa-bolt', 'fa-store', 'fa-location-dot'][i] || 'fa-star';
+    return ['fa-chart-line', 'fa-gear', 'fa-hand-holding-dollar'][i] || 'fa-star';
+  };
   
   return `<!DOCTYPE html>
 <html lang="en">
@@ -24,186 +41,261 @@ function generateHtmlFromSpec(spec: any, brand?: string): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${pageBrand} - ${spec.hero?.headline || 'Professional Service'}</title>
+  <meta name="description" content="Join ${stats[0]?.value || 'thousands'} ${stats[0]?.label?.toLowerCase() || 'customers'} growing with ${pageBrand}">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: { primary: '${primary}', accent: '${primary}' } } }
+    }
+  </script>
   <style>
     :root {
       --primary: ${primary};
       --gradient: ${gradient};
     }
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    .hero-gradient { background: var(--gradient); }
-    .btn-primary { 
-      background: var(--primary); 
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    .hero-bg { background: var(--gradient); }
+    .cta-primary { 
+      background: #1e293b; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       transition: all 0.3s ease;
     }
-    .btn-primary:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    .cta-primary:hover { 
+      background: #334155;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.2);
     }
-    .icon-circle {
-      width: 4rem;
-      height: 4rem;
-      background: linear-gradient(135deg, var(--primary), ${primary}cc);
-      border-radius: 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    .merchant-card {
+      border: 1px solid #e2e8f0;
+      transition: all 0.3s ease;
     }
-    .card-hover {
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    .merchant-card:hover {
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
     }
-    .card-hover:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 35px 60px -15px rgba(0,0,0,0.25);
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
     }
+    .fade-in-up { animation: fadeInUp 0.6s ease-out; }
+    .stat-value { color: var(--primary); }
   </style>
 </head>
 <body class="antialiased">
 
-  <!-- TRUST BADGES -->
-  <div class="bg-white/90 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 md:px-6 py-3">
-      <div class="flex flex-wrap items-center justify-center gap-3 md:gap-6 text-sm">
-        <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-100/50 border border-emerald-200/50 rounded-lg">
-          <i class="fas fa-check-circle text-emerald-600"></i>
-          <span class="font-semibold text-slate-900 text-xs md:text-sm">${isLimo ? '100% On-Time' : 'No Setup Fees'}</span>
-        </div>
-        <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-100/50 border border-blue-200/50 rounded-lg">
-          <i class="fas fa-clock text-blue-600"></i>
-          <span class="font-semibold text-slate-900 text-xs md:text-sm">${isLimo ? '24/7 Service' : '24/7 Support'}</span>
-        </div>
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-amber-100/50 border border-amber-200/50 rounded-lg">
-          <i class="fas fa-star text-amber-600"></i>
-          <span class="font-semibold text-slate-900 text-xs md:text-sm">${stats[0]?.value || '500+'} ${stats[0]?.label?.split(' ')[0] || 'Customers'}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SPLIT HERO -->
-  <section class="hero-gradient relative overflow-hidden py-16 md:py-24">
-    <div class="absolute inset-0 bg-black/10"></div>
-    <div class="relative max-w-7xl mx-auto px-4 md:px-6 grid md:grid-cols-2 gap-8 md:gap-16 items-center">
-      <div class="text-white z-10">
-        <h1 class="text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight tracking-tight">
-          ${spec.hero?.headline || 'Professional Service'}
-        </h1>
-        <p class="text-lg md:text-xl lg:text-2xl mb-8 opacity-95 max-w-lg leading-relaxed">
-          ${spec.hero?.subheadline || 'Reliable solutions for your business'}
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4">
-          <a href="${spec.hero?.primaryCTA?.href || '#book'}" class="btn-primary text-base md:text-lg px-8 py-4 font-bold uppercase tracking-wide inline-block rounded-xl text-center">
-            ${spec.hero?.primaryCTA?.label || 'Get Started'}
-          </a>
-          <a href="${spec.hero?.secondaryCTA?.href || '#fleet'}" class="border-2 border-white/80 px-8 py-4 rounded-xl font-semibold text-base md:text-lg hover:bg-white hover:text-[var(--primary)] transition-all duration-300 text-center">
-            ${spec.hero?.secondaryCTA?.label || 'Learn More'}
-          </a>
-        </div>
-      </div>
-      <div class="relative z-10 hidden md:block">
-        <div class="w-full aspect-[4/3] bg-gradient-to-br from-white/20 to-white/5 rounded-3xl backdrop-blur-xl border-4 border-white/20 shadow-2xl flex items-center justify-center">
-          <div class="w-48 h-32 bg-gradient-to-br from-white/30 to-transparent rounded-2xl backdrop-blur-xl border-2 border-white/30 flex items-center justify-center">
-            <i class="fas fa-${isLimo ? 'car-side' : 'star'} text-6xl text-white/80"></i>
+  <!-- HERO SECTION - Split Layout with Eyebrow -->
+  <section class="hero-bg min-h-[70vh] flex items-center justify-center py-16 md:py-20 px-4 md:px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <!-- Left: Copy -->
+        <div class="space-y-6">
+          <div class="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full text-sm font-medium">
+            ${eyebrowText}
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- STATS -->
-  <section class="py-12 md:py-16 px-4 md:px-6 bg-white/50 backdrop-blur-xl">
-    <div class="max-w-6xl mx-auto grid grid-cols-3 gap-4 md:gap-12 text-center">
-      ${stats.map((stat: any) => `
-      <div class="group p-4 md:p-6">
-        <div class="text-4xl md:text-5xl lg:text-6xl font-black mb-2" style="color: ${primary}">${stat.value}</div>
-        <div class="text-sm md:text-base font-semibold text-slate-800 tracking-tight">${stat.label}</div>
-      </div>`).join('')}
-    </div>
-  </section>
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-white">
+            ${spec.hero?.headline || 'Professional Service'}
+          </h1>
 
-  <!-- BENEFITS -->
-  <section class="py-16 md:py-24 px-4 md:px-6">
-    <div class="max-w-6xl mx-auto">
-      <h2 class="text-3xl md:text-4xl lg:text-5xl font-black text-center mb-12 md:mb-16 text-slate-900 leading-tight">
-        Why ${pageBrand.split(' ')[0]}?
-      </h2>
-      <div class="grid md:grid-cols-3 gap-6 md:gap-8">
-        ${benefits.map((benefit: any, i: number) => `
-        <div class="card-hover group p-8 rounded-3xl bg-white/80 backdrop-blur-xl shadow-2xl border border-slate-100/50 hover:border-[var(--primary)]/20">
-          <div class="icon-circle mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-            <i class="fas fa-${['star', 'car', 'user'][i] || 'star'} text-2xl text-white"></i>
-          </div>
-          <h3 class="text-xl md:text-2xl font-bold mb-4 text-slate-900 group-hover:text-[var(--primary)] transition-colors text-center">
-            ${benefit.title}
-          </h3>
-          <p class="text-base text-slate-600 leading-relaxed text-center">
-            ${benefit.body}
+          <p class="text-lg md:text-xl text-white/90 leading-relaxed max-w-lg">
+            ${spec.hero?.subheadline || 'Reliable solutions for your business'}
           </p>
+
+          <div class="flex flex-col sm:flex-row gap-4">
+            <a href="${spec.hero?.primaryCTA?.href || '#'}" class="cta-primary font-bold px-8 py-4 rounded-lg text-center text-lg text-white">
+              ${spec.hero?.primaryCTA?.label || 'Get Started'}
+            </a>
+            <a href="${spec.hero?.secondaryCTA?.href || '#'}" class="border-2 border-white/50 hover:border-white text-white hover:bg-white/10 font-bold px-8 py-4 rounded-lg text-center text-lg transition-all">
+              ${spec.hero?.secondaryCTA?.label || 'Learn More'}
+            </a>
+          </div>
+
+          <!-- Trust signals inline -->
+          <div class="flex flex-wrap items-center gap-6 text-sm text-white/80 pt-2">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+              <span>${isLimo ? '100% On-Time' : isFood ? 'No Minimum Order' : 'No Setup Fees'}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+              <span>${isLimo ? '24/7 Service' : isFood ? 'Live Tracking' : '24/7 Support'}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+              <span>${isLimo ? '500+ Events' : isFood ? 'Fast Delivery' : 'Proven Results'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Visual Mockup -->
+        <div class="relative">
+          <div class="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl border border-white/20">
+            ${isLimo ? `
+            <div class="text-center py-8">
+              <i class="fas fa-car-side text-7xl text-white/80 mb-6"></i>
+              <div class="text-3xl font-bold text-white mb-2">Premium Fleet</div>
+              <div class="text-xl text-white/80">Mercedes S-Class • Escalade</div>
+            </div>
+            ` : isFood ? `
+            <div class="space-y-4">
+              <div class="flex items-center gap-4 bg-white/10 p-4 rounded-xl">
+                <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-bolt text-white text-xl"></i>
+                </div>
+                <div>
+                  <div class="font-semibold text-white">Fast Delivery</div>
+                  <div class="text-sm text-white/70">In 30 mins or less</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-4 bg-white/10 p-4 rounded-xl">
+                <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-store text-white text-xl"></i>
+                </div>
+                <div>
+                  <div class="font-semibold text-white">500K+ Restaurants</div>
+                  <div class="text-sm text-white/70">Your favorites, delivered</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-4 bg-white/10 p-4 rounded-xl">
+                <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-location-dot text-white text-xl"></i>
+                </div>
+                <div>
+                  <div class="font-semibold text-white">Track Live</div>
+                  <div class="text-sm text-white/70">See your order arrive</div>
+                </div>
+              </div>
+            </div>
+            ` : `
+            <div class="space-y-6">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <span class="text-white font-bold text-xl">${pageBrand.charAt(0)}</span>
+                </div>
+                <div>
+                  <div class="font-semibold text-white">Dashboard</div>
+                  <div class="text-sm text-white/70">Analytics & Insights</div>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white/10 rounded-lg p-4">
+                  <div class="text-sm text-white/70 mb-1">Total Orders</div>
+                  <div class="text-2xl font-bold text-white">1,247</div>
+                  <div class="text-sm text-green-400">+23%</div>
+                </div>
+                <div class="bg-white/10 rounded-lg p-4">
+                  <div class="text-sm text-white/70 mb-1">Revenue</div>
+                  <div class="text-2xl font-bold text-white">$8,547</div>
+                  <div class="text-sm text-green-400">+18%</div>
+                </div>
+              </div>
+            </div>
+            `}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS SECTION -->
+  <section class="py-12 md:py-16 px-4 md:px-6 bg-gray-50">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid grid-cols-3 gap-6 md:gap-8">
+        ${stats.map((stat: any) => `
+        <div class="text-center">
+          <div class="text-3xl md:text-4xl font-bold stat-value mb-2">${stat.value}</div>
+          <div class="text-gray-600 text-sm md:text-base">${stat.label}</div>
         </div>`).join('')}
       </div>
     </div>
   </section>
 
-  <!-- TESTIMONIALS -->
-  <section class="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-slate-50 to-white">
+  <!-- BENEFITS SECTION -->
+  <section class="py-16 md:py-24 px-4 md:px-6 bg-white">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-12 md:mb-16">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4 text-gray-900">
+          ${isLimo ? 'Luxury Redefined' : isFood ? 'Why Choose Us' : 'Grow Your Business'}
+        </h2>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          ${isLimo ? 'Premium transportation for discerning clients' : 
+            isFood ? 'The best food delivery experience' : 
+            'Comprehensive solutions for your needs'}
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        ${benefits.map((benefit: any, i: number) => `
+        <div class="merchant-card bg-white p-6 md:p-8 rounded-xl fade-in-up" style="animation-delay: ${i * 0.1}s">
+          <div class="w-12 h-12 rounded-lg flex items-center justify-center mb-6" style="background-color: ${primary}15">
+            <i class="fas fa-${getIcon(i)} text-2xl" style="color: ${primary}"></i>
+          </div>
+          <h3 class="text-xl font-bold mb-3 text-gray-900">${benefit.title}</h3>
+          <p class="text-gray-600 leading-relaxed">${benefit.body}</p>
+        </div>`).join('')}
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS SECTION -->
+  ${testimonials.length > 0 ? `
+  <section class="py-16 md:py-24 px-4 md:px-6 bg-gray-50">
     <div class="max-w-5xl mx-auto">
-      <h2 class="text-3xl md:text-4xl lg:text-5xl font-black text-center mb-12 md:mb-16 text-slate-900">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900">
         What Our Clients Say
       </h2>
       <div class="grid md:grid-cols-2 gap-6 md:gap-8">
         ${testimonials.slice(0, 2).map((item: any, i: number) => `
-        <div class="bg-white/70 p-8 rounded-3xl shadow-2xl border border-slate-100/50 backdrop-blur-xl hover:shadow-3xl hover:-translate-y-2 transition-all duration-500">
+        <div class="bg-white p-8 rounded-xl shadow-lg">
           <div class="flex items-start mb-4">
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold text-white mr-4 flex-shrink-0" style="background-color: ${primary}">
+            <div class="w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold text-white mr-4" style="background-color: ${primary}">
               ${item.title?.split(' ').map((n: string) => n[0]).join('').substring(0,2) || 'CS'}
             </div>
             <div>
-              <div class="font-bold text-lg text-slate-900 mb-1">${item.title}</div>
-              ${item.rating ? `<div class="flex text-sm" style="color: ${primary}">${'★'.repeat(item.rating)}</div>` : ''}
+              <div class="font-bold text-lg text-gray-900">${item.title}</div>
+              ${item.rating ? `<div class="flex text-sm mt-1" style="color: ${primary}">${'★'.repeat(item.rating)}</div>` : ''}
             </div>
           </div>
-          <p class="text-base text-slate-700 leading-relaxed italic">"${item.body?.replace(/"/g, '') || 'Great service!'}"</p>
+          <p class="text-gray-600 leading-relaxed italic">"${item.body?.replace(/"/g, '') || 'Great service!'}"</p>
         </div>`).join('')}
       </div>
     </div>
-  </section>
+  </section>` : ''}
 
   ${isLimo ? `
-  <!-- BOOKING FORM -->
-  <section class="py-16 md:py-24 px-4 md:px-6 bg-gradient-to-b from-white to-slate-50">
-    <div class="max-w-4xl mx-auto text-center">
-      <h2 class="text-3xl md:text-4xl lg:text-5xl font-black mb-6 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-        Book Your Transfer
-      </h2>
-      <p class="text-lg md:text-xl mb-10 opacity-90 max-w-2xl mx-auto">Starting at $89. 20% off first booking.</p>
-      <div class="bg-white/70 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-slate-200/50">
+  <!-- BOOKING FORM FOR LIMO -->
+  <section class="py-16 md:py-24 px-4 md:px-6 bg-white">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4 text-gray-900">Book Your Transfer</h2>
+        <p class="text-lg text-gray-600">Starting at $89. 20% off first booking.</p>
+      </div>
+      <div class="bg-gray-50 rounded-2xl p-8 shadow-lg">
         <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Pickup</label>
-            <select class="w-full p-4 border-2 border-slate-200/50 rounded-xl text-base font-semibold focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/20">
-              <option>Airport</option>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Pickup</label>
+            <select class="w-full p-3 border border-gray-200 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>Doha Airport (DOH)</option>
               <option>Hotel</option>
               <option>Office</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Passengers</label>
-            <select class="w-full p-4 border-2 border-slate-200/50 rounded-xl text-base font-semibold focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/20">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Passengers</label>
+            <select class="w-full p-3 border border-gray-200 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent">
               <option>1-3 (Sedan)</option>
               <option>4-6 (SUV)</option>
               <option>7+ (Minibus)</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">Date</label>
-            <input type="date" class="w-full p-4 border-2 border-slate-200/50 rounded-xl text-base font-semibold focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--primary)]/20"/>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+            <input type="date" class="w-full p-3 border border-gray-200 rounded-lg text-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
           </div>
           <div class="flex items-end">
-            <a href="#book" class="w-full btn-primary text-base py-4 px-6 font-bold uppercase tracking-wide rounded-xl flex items-center justify-center">Check</a>
+            <a href="#book" class="cta-primary w-full py-3 px-6 rounded-lg font-bold text-white text-center block">Check</a>
           </div>
         </div>
       </div>
@@ -211,28 +303,27 @@ function generateHtmlFromSpec(spec: any, brand?: string): string {
   </section>` : ''}
 
   <!-- FINAL CTA -->
-  <section class="hero-gradient py-16 md:py-20 px-4 md:px-6 text-white text-center relative overflow-hidden">
-    <div class="absolute inset-0 bg-black/10 backdrop-blur-md" />
-    <div class="relative z-10 max-w-3xl mx-auto">
-      <h2 class="text-3xl md:text-4xl lg:text-5xl font-black mb-6 leading-tight">${spec.closingCTA?.headline || 'Ready to get started?'}</h2>
-      <p class="text-lg md:text-xl mb-8 opacity-95">${spec.closingCTA?.body || ''}</p>
-      ${spec.closingCTA?.primaryCTA ? `<a href="${spec.closingCTA.primaryCTA.href || '#book'}" class="btn-primary text-lg md:text-xl px-12 py-5 font-bold uppercase tracking-wide inline-block shadow-2xl rounded-xl">${spec.closingCTA.primaryCTA.label}</a>` : ''}
+  <section class="hero-bg py-16 md:py-20 px-4 md:px-6 text-white text-center">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">${spec.closingCTA?.headline || 'Ready to get started?'}</h2>
+      <p class="text-lg mb-8 opacity-90">${spec.closingCTA?.body || `Join ${stats[0]?.value || 'thousands'} ${stats[0]?.label?.toLowerCase() || 'customers'} today.`}</p>
+      ${spec.closingCTA?.primaryCTA ? `<a href="${spec.closingCTA.primaryCTA.href || '#'}" class="inline-block bg-white text-gray-900 px-10 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors">${spec.closingCTA.primaryCTA.label}</a>` : ''}
     </div>
   </section>
 
   <!-- FOOTER -->
-  <footer class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white py-12 md:py-16 px-4 md:px-6">
+  <footer class="bg-gray-900 text-white py-12 md:py-16 px-4 md:px-6">
     <div class="max-w-6xl mx-auto text-center">
-      <h3 class="text-2xl md:text-3xl font-black mb-6">${pageBrand}</h3>
-      <p class="text-lg opacity-80 mb-8 max-w-2xl mx-auto leading-relaxed">Professional service for discerning clients</p>
+      <h3 class="text-2xl md:text-3xl font-bold mb-6">${pageBrand}</h3>
+      <p class="text-gray-400 mb-8 max-w-2xl mx-auto">Professional service for discerning clients</p>
       <div class="flex flex-wrap justify-center gap-6 text-base mb-8">
-        <a href="#" class="font-semibold hover:opacity-80 transition-opacity">Home</a>
-        <a href="#" class="font-semibold hover:opacity-80 transition-opacity">Services</a>
-        <a href="#" class="font-semibold hover:opacity-80 transition-opacity">Contact</a>
-        <a href="#" class="font-semibold hover:opacity-80 transition-opacity">Book Now</a>
+        <a href="#" class="text-gray-400 hover:text-white transition-colors">Home</a>
+        <a href="#" class="text-gray-400 hover:text-white transition-colors">Services</a>
+        <a href="#" class="text-gray-400 hover:text-white transition-colors">Contact</a>
+        <a href="#" class="text-gray-400 hover:text-white transition-colors">Book Now</a>
       </div>
-      <div class="border-t border-slate-700 pt-6 opacity-70">
-        <p class="text-sm">© 2026 ${pageBrand}. All rights reserved.</p>
+      <div class="border-t border-gray-800 pt-8">
+        <p class="text-gray-500 text-sm">© 2026 ${pageBrand}. All rights reserved.</p>
       </div>
     </div>
   </footer>
