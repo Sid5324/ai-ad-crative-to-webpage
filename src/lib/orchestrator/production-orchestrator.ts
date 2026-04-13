@@ -361,7 +361,7 @@ Return valid JSON matching the PageSpec schema.
       hero: {
         eyebrow: 'Welcome',
         headline: `Experience ${brand.canonicalName}`,
-        subheadline: `Premium ${category.primary} services tailored for you. Get started today!`,
+        subheadline: `Premium services tailored for you. Get started today!`,
         primaryCta: 'Get Started',
         secondaryCta: 'Learn More'
       },
