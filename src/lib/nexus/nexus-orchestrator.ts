@@ -322,7 +322,7 @@ Return JSON:
               { id: 'cta', type: 'cta', section: 'cta', required: true }
             ],
             priority: Array.isArray(result.priority) ? result.priority : ['hero', 'stats', 'benefits', 'cta'],
-            responsive: result responsive !== false,
+            responsive: result.responsive !== false,
             confidence: SKILLS.safeNumber(result.confidence, 0.7)
           };
         }
