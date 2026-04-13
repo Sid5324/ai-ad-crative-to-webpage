@@ -15,9 +15,9 @@ const ICONS = {
 };
 
 export default function BrandRenderer({ spec }: RendererProps) {
-  const primary = spec.designTokens?.colorPrimary || '#3B82F6';
+  const primary = spec.designTokens?.primaryColor || spec.designTokens?.colorPrimary || '#3B82F6';
   const gradient = spec.designTokens?.gradient || `linear-gradient(135deg, ${primary} 0%, ${primary}cc 100%)`;
-  const brandName = spec.brand || 'Your Brand';
+  const brandName = typeof spec.brand === 'string' ? spec.brand : spec.brand?.canonicalName || 'Your Brand';
   const isLimo = brandName.toLowerCase().includes('limousine') || brandName.toLowerCase().includes('astar');
   
   // Get benefits from spec
@@ -97,20 +97,20 @@ export default function BrandRenderer({ spec }: RendererProps) {
           {/* Hero Text */}
           <div className="text-white z-10">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 leading-tight tracking-tight">
-              {spec.hero?.headline || 'Professional Service'}
-            </h1>
-            <p className="text-lg md:text-xl lg:text-2xl mb-8 opacity-95 max-w-lg leading-relaxed">
-              {spec.hero?.subheadline || 'Reliable solutions for your business'}
+{typeof spec.hero?.headline === 'string' ? spec.hero.headline : spec.hero?.headline?.headline || 'Professional Service'}
+              </h1>
+              <p className="text-lg md:text-xl opacity-90 mb-8 max-w-2xl mx-auto">
+                {typeof spec.hero?.subheadline === 'string' ? spec.hero.subheadline : spec.hero?.subheadline?.subheadline || 'Reliable solutions for your business'}
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              {spec.hero?.primaryCTA && (
-                <a href={spec.hero.primaryCTA.href || '#book'} className="btn-primary text-base md:text-lg px-8 py-4 font-bold uppercase tracking-wide inline-block rounded-xl text-center">
-                  {spec.hero.primaryCTA.label}
+              {spec.hero?.primaryCta && (
+                <a href={typeof spec.hero.primaryCta === 'string' ? '#book' : spec.hero.primaryCta?.href || '#book'} className="btn-primary text-base md:text-lg px-8 py-4 font-bold uppercase tracking-wide inline-block rounded-xl text-center">
+                  {typeof spec.hero.primaryCta === 'string' ? spec.hero.primaryCta : spec.hero.primaryCta?.label || 'Get Started'}
                 </a>
               )}
-              {spec.hero?.secondaryCTA && (
-                <a href={spec.hero.secondaryCTA.href || '#fleet'} className="border-2 border-white/80 px-8 py-4 rounded-xl font-semibold text-base md:text-lg hover:bg-white hover:text-[var(--primary)] transition-all duration-300 text-center">
-                  {spec.hero.secondaryCTA.label}
+              {spec.hero?.secondaryCta && (
+                <a href={typeof spec.hero.secondaryCta === 'string' ? '#fleet' : spec.hero.secondaryCta?.href || '#fleet'} className="border-2 border-white/80 px-8 py-4 rounded-xl font-semibold text-base md:text-lg hover:bg-white hover:text-[var(--primary)] transition-all duration-300 text-center">
+                  {typeof spec.hero.secondaryCta === 'string' ? spec.hero.secondaryCta : spec.hero.secondaryCta?.label || 'Learn More'}
                 </a>
               )}
             </div>
