@@ -62,6 +62,13 @@ class PreflightAgent {
 // ========== IDENTITY EXTRACTOR AGENT ==========
 class IdentityExtractorAgent {
   async execute(ctx: AgentContext): Promise<AgentResult<BrandIdentity>> {
+    const hasContent = ctx.siteContent && ctx.siteContent.length > 100;
+
+    // If no content available, use simple hostname-based extraction
+    if (!hasContent) {
+      return this.extractFromHostname(ctx.url);
+    }
+
     const prompt = `
 Extract canonical brand identity from this URL and content:
 
@@ -70,7 +77,7 @@ Content: ${ctx.siteContent?.substring(0, 2000) || 'No content available'}
 
 Instructions:
 1. Look for: JSON-LD organization name, og:site_name, <title> prefix, logo alt, footer legal, navbar
-2. REJECT taglines, slogans, "Welcome to...", location-based names
+2. REJECT taglines, slogans, "Welcome to...", location-based names like "X in City, Country"
 3. Keep it short: max 30 characters for brand name
 4. Provide evidence list
 
@@ -87,13 +94,10 @@ Return JSON: {
       const raw = await groqCall('llama-3.3-70b-versatile', prompt, { type: 'json_object' });
       const identity = raw as any;
 
-      // Additional validation
-      if (looksLikeTagline(identity.canonicalName)) {
-        return {
-          ok: false,
-          error: 'Extracted name looks like a tagline',
-          confidence: 0.3
-        };
+      // Only reject if it REALLY looks like a tagline (contains location or service words)
+      if (this.isObviouslyTagline(identity.canonicalName)) {
+        // Try hostname fallback instead
+        return this.extractFromHostname(ctx.url);
       }
 
       return {
@@ -102,18 +106,75 @@ Return JSON: {
         confidence: identity.confidence || 0.7
       };
     } catch (error) {
+      // Fallback on error
+      return this.extractFromHostname(ctx.url);
+    }
+  }
+
+  // Simple hostname-based extraction when content unavailable
+  private extractFromHostname(url: string): AgentResult<BrandIdentity> {
+    try {
+      const hostname = new URL(url).hostname.replace(/^www\./, '');
+      const domain = hostname.split('.')[0];
+
+      // Clean and capitalize
+      const brandName = domain
+        .replace(/[^a-zA-Z0-9]/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .filter(word => word.length > 0)
+        .join(' ');
+
+      return {
+        ok: true,
+        data: {
+          canonicalName: brandName,
+          shortName: brandName.substring(0, 15),
+          domain: url,
+          confidence: 0.6, // Lower confidence but valid
+          evidence: ['hostname_fallback']
+        },
+        confidence: 0.6
+      };
+    } catch {
       return {
         ok: false,
-        error: `Identity extraction failed: ${error}`,
+        error: 'Failed to extract brand from URL',
         confidence: 0
       };
     }
+  }
+
+  // Check if name is obviously a tagline (not a brand name)
+  private isObviouslyTagline(name?: string): boolean {
+    if (!name) return true;
+    const n = name.toLowerCase();
+    // Contains location patterns
+    if (/ in [a-z]+,? [a-z]/i.test(n)) return true;
+    if (/, [a-z]{2,}$/.test(n)) return true;
+    // Contains service/description words
+    if (/^(the |a |an )?(luxury |premium |)?(chauffeur|limousine|service|company|solutions)/i.test(n)) return true;
+    // Too long
+    if (name.length > 40) return true;
+    return false;
   }
 }
 
 // ========== CATEGORY CLASSIFIER AGENT ==========
 class CategoryClassifierAgent {
   async execute(ctx: AgentContext, brand: BrandIdentity): Promise<AgentResult<CategoryResult>> {
+    // Try to infer from hostname if no content
+    const hostnameCategory = this.inferFromHostname(ctx.url, brand.canonicalName);
+    const hasContent = ctx.siteContent && ctx.siteContent.length > 100;
+
+    if (!hasContent) {
+      return {
+        ok: true,
+        data: hostnameCategory,
+        confidence: hostnameCategory.confidence
+      };
+    }
+
     const prompt = `
 Classify this business into ONE category from this list ONLY:
 
@@ -148,12 +209,46 @@ Return JSON: {
         confidence: category.confidence || 0.7
       };
     } catch (error) {
+      // Fallback to hostname-based inference
       return {
         ok: true,
-        data: { primary: 'other', confidence: 0.5, evidence: ['fallback'] },
-        confidence: 0.5
+        data: hostnameCategory,
+        confidence: hostnameCategory.confidence
       };
     }
+  }
+
+  // Infer category from hostname patterns
+  private inferFromHostname(url: string, brandName: string): CategoryResult {
+    const hostname = url.toLowerCase();
+
+    // Food delivery patterns
+    if (hostname.includes('doordash') || hostname.includes('ubereats') || hostname.includes('grubhub') || hostname.includes('foodpanda')) {
+      return { primary: 'food_delivery', confidence: 0.9, evidence: ['hostname_pattern'] };
+    }
+
+    // Ride sharing / transportation
+    if (hostname.includes('uber') || hostname.includes('lyft') || hostname.includes('taxi')) {
+      return { primary: 'transportation', confidence: 0.8, evidence: ['hostname_pattern'] };
+    }
+
+    // Fintech patterns
+    if (hostname.includes('stripe') || hostname.includes('paypal') || hostname.includes('cred') || hostname.includes('bank')) {
+      return { primary: 'fintech', confidence: 0.8, evidence: ['hostname_pattern'] };
+    }
+
+    // Ecommerce
+    if (hostname.includes('shop') || hostname.includes('store') || hostname.includes('amazon')) {
+      return { primary: 'ecommerce', confidence: 0.7, evidence: ['hostname_pattern'] };
+    }
+
+    // SaaS
+    if (hostname.includes('app') || hostname.includes('cloud') || hostname.includes('software')) {
+      return { primary: 'saas', confidence: 0.7, evidence: ['hostname_pattern'] };
+    }
+
+    // Default
+    return { primary: 'other', confidence: 0.5, evidence: ['hostname_fallback'] };
   }
 }
 
