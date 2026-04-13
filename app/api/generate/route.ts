@@ -1,153 +1,94 @@
-// src/app/api/generate/route.ts - AI Content Generation System
+// app/api/generate/route.ts - Simplified Generator ( Single Sequential Pipeline)
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { runPersonalizationWorkflow } from '@/lib/workflow';
-import { getBrandDesign } from '@/lib/brand-designs';
+import { generateTrulySimpleLandingPage, type LandingPageInput } from '@/lib/truly-simple-landing-generator';
 
 const PREVIEWS: Record<string, any> = {};
 
 export async function POST(req: Request) {
-  console.log('🚀 AI CONTENT GENERATION START');
+  console.log('🚀 SIMPLIFIED LANDING PAGE GENERATION START');
 
   const body = await req.json();
-  const input = {
-    adInputType: body.adInputType || 'copy',
-    adInputValue: body.adInputValue || '',
-    targetUrl: body.targetUrl || '',
-    audienceOverride: body.targetAudience || undefined,
+  const input: LandingPageInput = {
+    adImage: body.adImageUrl || undefined,
+    adText: body.adInputValue || body.adCopy || undefined,
+    category: body.category || 'Business',
+    targetUrl: body.targetUrl || body.url || ''
   };
 
   try {
-
-    if (!input.adInputValue || !input.targetUrl) {
-      throw new Error('adInputValue and targetUrl are required');
+    if (!input.targetUrl) {
+      return NextResponse.json({ success: false, error: 'targetUrl required' }, { status: 400 });
     }
 
-    console.log('📋 Input:', input.adInputValue);
+    if (!input.adImage && !input.adText) {
+      return NextResponse.json({ success: false, error: 'Either adImageUrl or adInputValue required' }, { status: 400 });
+    }
+
+    console.log('📋 Input:', input.adImage ? 'image' : 'text');
     console.log('🎯 Target:', input.targetUrl);
 
-    // Use AI agents to generate personalized content (not templates!)
-    const result = await runPersonalizationWorkflow(input);
+    // SINGLE SEQUENTIAL PIPELINE - No dual paths, no parallel execution
+    const result = await generateTrulySimpleLandingPage(input);
 
     if (!result.success) {
-      throw new Error('AI content generation failed');
+      const meta = result.metadata as any || {};
+      return NextResponse.json({
+        success: false,
+        error: meta.errors?.[0]?.message || 'Generation failed',
+        state: meta.state,
+        qaScore: meta.qaScore,
+        stateHistory: meta.stateHistory,
+        debug: { errors: meta.errors }
+      }, { status: 400 });
     }
 
-    // Get design templates (colors, layouts) based on brand detection
-    // Use AI-detected brand from URL analysis, fallback to spec brand or URL hostname matching
-    const urlBrand = result.debug?.urlAnalysis?.brandName || '';
-    const detectedBrand = urlBrand || (result.spec.brand !== 'Unknown' ? result.spec.brand : '');
-    const design = getBrandDesign(input.targetUrl, detectedBrand);
-
-    // Combine AI-generated content with design templates
-    const finalSpec = {
-      ...result.spec,
-      // Use detected brand from URL analysis, not AI spec
-      brand: detectedBrand || result.spec.brand || design.name,
-      designTokens: {
-        colorPrimary: design.colors.primary,
-        gradient: design.colors.gradient,
-        accent: design.colors.accent,
-      },
-      // Use AI-generated content, not template content
-      hero: {
-        headline: result.spec.hero?.headline || 'Professional Service',
-        subheadline: result.spec.hero?.subheadline || 'Quality solutions for your needs',
-        primaryCTA: { label: result.spec.hero?.primaryCTA || 'Get Started', href: '#book' },
-        secondaryCTA: { label: result.spec.hero?.secondaryCTA || 'Learn More', href: '#learn' },
-      },
-      stats: result.spec.stats || design.stats,
-      sections: result.spec.sections || [],
-      closingCTA: result.spec.closingCTA,
+    // Create preview
+    const previewId = nanoid(10);
+    PREVIEWS[previewId] = {
+      spec: result.spec,
+      html: result.html,
+      metadata: result.metadata
     };
 
-    const previewId = nanoid(10);
-    PREVIEWS[previewId] = { spec: finalSpec, brand: detectedBrand || result.spec.brand };
-
-    console.log('✅ AI Generated Content:');
-    console.log('   Brand:', detectedBrand || result.spec.brand);
-    console.log('   URL Detected:', result.debug?.urlAnalysis?.brandName);
-    console.log('   Headline:', finalSpec.hero.headline);
-    console.log('   Quality Score:', result.qualityScore);
+    console.log('✅ Generated:');
+    console.log('   Brand:', result.spec?.brand?.name);
+    console.log('   Category:', result.spec?.brand?.category);
+    const meta = result.metadata as any;
+    console.log('   QA Score:', meta?.qaScore);
+    console.log('   State:', meta?.state);
 
     return NextResponse.json({
       success: true,
       previewId,
-      spec: finalSpec,
-      qualityScore: result.qualityScore,
-      engine: 'ai-content-generation',
-      debug: {
-        brand: detectedBrand || result.spec.brand,
-        urlDetectedBrand: result.debug?.urlAnalysis?.brandName,
-        audience: result.audienceResolution?.resolved,
-        conversionPotential: result.conversionPotential,
-        designUsed: design.name,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      previewId,
-      spec: finalSpec,
-      qualityScore: result.qualityScore,
-      engine: 'ai-content-generation',
-      debug: {
-        brand: result.spec.brand,
-        audience: result.audienceResolution?.resolved,
-        conversionPotential: result.conversionPotential,
-      },
+      previewUrl: `/api/preview?id=${previewId}`,
+      html: result.html,
+      spec: result.spec,
+      qualityScore: meta?.qaScore || 85,
+      engine: 'truly-simple-v2.0',
+      state: meta?.state,
+      stateHistory: meta?.stateHistory,
+      debug: { errors: meta?.errors }
     });
 
   } catch (error: any) {
-    console.error('❌ ERROR:', error.message);
-
-    // AI fallback - basic spec with design
-    const design = getBrandDesign(input.targetUrl);
-    const fallbackSpec = {
-      brand: 'Your Business',
-      audience: 'consumer',
-      hero: {
-        headline: 'Professional Service',
-        subheadline: 'Quality solutions for your needs',
-        primaryCTA: { label: 'Get Started', href: '#book' },
-        secondaryCTA: { label: 'Learn More', href: '#learn' },
-      },
-      stats: design.stats,
-      sections: [
-        {
-          type: 'benefits',
-          title: 'Why Choose Us?',
-          items: [
-            { title: 'Quality Service', body: 'Professional solutions you can trust' },
-            { title: 'Expert Team', body: 'Years of experience in our field' },
-          ],
-        },
-      ],
-      designTokens: {
-        colorPrimary: design.colors.primary,
-        gradient: design.colors.gradient,
-        accent: design.colors.accent,
-      },
-    };
+    console.error('❌ ERROR:', error?.message || error);
 
     return NextResponse.json({
-      success: true,
-      previewId: nanoid(10),
-      spec: fallbackSpec,
-      qualityScore: 70,
-      engine: 'ai-fallback',
-      debug: { fallback: true, error: error.message },
-    });
+      success: false,
+      error: error?.message || 'Internal server error',
+      debug: { error: true }
+    }, { status: 500 });
   }
 }
-
-
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
+
   if (!id || !PREVIEWS[id]) {
     return NextResponse.json({ error: 'Preview expired' }, { status: 404 });
   }
+
   return NextResponse.json(PREVIEWS[id]);
 }
