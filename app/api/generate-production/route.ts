@@ -1,54 +1,41 @@
-// app/api/generate-production/route.ts - Production API with Agent Framework
+// app/api/generate-production/route.ts - Production API with Schema-Based Orchestrator
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { generateProductionLandingPage, type ProductionLandingInput } from '@/lib/production-landing-generator';
+import { productionOrchestrator } from '@/lib/orchestrator/production-orchestrator';
 
 const PREVIEWS: Record<string, any> = {};
 
 export async function POST(req: Request) {
-  console.log('🚀 PRODUCTION LANDING PAGE GENERATION START');
+  console.log('🚀 PRODUCTION SCHEMA-BASED GENERATION START');
 
   const body = await req.json();
-  const input: ProductionLandingInput = {
-    targetUrl: body.targetUrl || body.url || '',
-    adImage: body.adImageUrl || undefined,
-    adText: body.adInputValue || body.adCopy || undefined,
-    category: body.category || undefined
+  const input = {
+    url: body.targetUrl || body.url || '',
+    adText: body.adInputValue || body.adCopy || undefined
   };
 
   try {
-    if (!input.targetUrl) {
+    if (!input.url) {
       return NextResponse.json({
         success: false,
         error: 'targetUrl is required'
       }, { status: 400 });
     }
 
-    if (!input.adImage && !input.adText) {
-      return NextResponse.json({
-        success: false,
-        error: 'Either adImageUrl or adInputValue is required'
-      }, { status: 400 });
-    }
-
     console.log('📋 Production Input:', {
-      url: input.targetUrl,
-      hasImage: !!input.adImage,
-      hasText: !!input.adText,
-      category: input.category
+      url: input.url,
+      hasAdText: !!input.adText
     });
 
-    // Generate with production framework
-    const result = await generateProductionLandingPage(input);
+    // Generate with production orchestrator (no hardcoding, strict validation)
+    const result = await productionOrchestrator.generateLandingPage(input);
 
     if (!result.success) {
       return NextResponse.json({
         success: false,
-        error: result.errors[0] || 'Generation failed',
-        state: result.state,
-        errors: result.errors,
-        spec: result.spec,
-        metadata: result.metadata
+        error: result.issues[0] || 'Generation failed',
+        issues: result.issues,
+        confidence: result.confidence
       }, { status: 400 });
     }
 
@@ -56,14 +43,13 @@ export async function POST(req: Request) {
     const previewId = nanoid(10);
     PREVIEWS[previewId] = {
       spec: result.spec,
-      html: result.html,
-      metadata: result.metadata
+      html: result.html
     };
 
     console.log('✅ Production generation completed:');
-    console.log(`   State: ${result.state}`);
-    console.log(`   QA Score: ${result.metadata.qaScore}`);
-    console.log(`   Duration: ${result.metadata.duration}ms`);
+    console.log(`   Brand: ${result.spec?.brand.canonicalName}`);
+    console.log(`   Category: ${result.spec?.category.primary}`);
+    console.log(`   Confidence: ${result.confidence}`);
     console.log(`   HTML Size: ${result.html?.length} chars`);
 
     return NextResponse.json({
@@ -72,9 +58,9 @@ export async function POST(req: Request) {
       previewUrl: `/api/preview?id=${previewId}`,
       html: result.html,
       spec: result.spec,
-      state: result.state,
-      metadata: result.metadata,
-      engine: 'production-agent-framework-v1.0'
+      confidence: result.confidence,
+      issues: result.issues,
+      engine: 'production-schema-orchestrator-v2.0'
     });
 
   } catch (error: any) {
@@ -83,12 +69,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: false,
       error: error?.message || 'Internal server error',
-      state: 'CRITICAL_ERROR',
-      metadata: {
-        duration: 0,
-        skillsUsed: [],
-        version: 'production-v1.0'
-      }
+      state: 'CRITICAL_ERROR'
     }, { status: 500 });
   }
 }
