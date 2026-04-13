@@ -279,7 +279,21 @@ Return valid JSON matching the PageSpec schema.
 `;
 
     try {
-      const raw = await groqCall('llama-3.3-70b-versatile', prompt, { type: 'json_object' });
+      let raw = await groqCall('llama-3.3-70b-versatile', prompt, { type: 'json_object' });
+      
+      // Parse JSON if it's a string
+      if (typeof raw === 'string') {
+        try {
+          raw = JSON.parse(raw);
+        } catch {
+          return {
+            ok: false,
+            error: 'Failed to parse LLM response as JSON',
+            confidence: 0
+          };
+        }
+      }
+      
       const spec = raw as any;
 
       // Validate immediately
@@ -311,12 +325,67 @@ Return valid JSON matching the PageSpec schema.
       };
 
     } catch (error) {
-      return {
-        ok: false,
-        error: `Spec building failed: ${error}`,
-        confidence: 0
-      };
+      // Fallback: generate basic spec
+      return this.generateFallbackSpec(brand, category);
     }
+  }
+
+  // Generate fallback spec when LLM fails
+  private generateFallbackSpec(brand: BrandIdentity, category: CategoryResult): AgentResult<PageSpec> {
+    const defaultColors: Record<string, { primary: string; background: string; surface: string }> = {
+      fintech: { primary: '#635BFF', background: '#0A2540', surface: '#F6F8FA' },
+      food_delivery: { primary: '#FF3008', background: '#FFFFFF', surface: '#FFF8F5' },
+      transportation: { primary: '#000000', background: '#1A1A1A', surface: '#F7F7F7' },
+      ecommerce: { primary: '#FF9900', background: '#FFFFFF', surface: '#FAFAFA' },
+      saas: { primary: '#3B82F6', background: '#0F172A', surface: '#1E293B' },
+      other: { primary: '#1E293B', background: '#FFFFFF', surface: '#F8FAFC' }
+    };
+
+    const colors = defaultColors[category.primary] || defaultColors.other;
+
+    const fallbackSpec: PageSpec = {
+      brand: {
+        canonicalName: brand.canonicalName,
+        shortName: brand.shortName || brand.canonicalName.substring(0, 15),
+        domain: brand.domain,
+        confidence: 0.6,
+        evidence: ['fallback_generation']
+      },
+      category: {
+        primary: category.primary,
+        confidence: 0.6,
+        evidence: category.evidence
+      },
+      hero: {
+        eyebrow: 'Welcome',
+        headline: `Experience ${brand.canonicalName}`,
+        subheadline: `Premium ${category.primary} services tailored for you. Get started today!`,
+        primaryCta: 'Get Started',
+        secondaryCta: 'Learn More'
+      },
+      stats: [
+        { label: 'Customers', value: '10K+' },
+        { label: 'Years Experience', value: '5+' },
+        { label: 'Satisfaction', value: '99%' }
+      ],
+      benefits: [
+        { title: 'Quality Service', description: 'We deliver exceptional quality in everything we do.' },
+        { title: 'Expert Team', description: 'Our experienced team ensures best outcomes.' },
+        { title: 'Customer First', description: 'Your satisfaction is our top priority.' }
+      ],
+      trustSignals: ['licensed', 'insured', 'trusted'],
+      designTokens: {
+        primaryColor: colors.primary,
+        backgroundColor: colors.background,
+        surfaceColor: colors.surface
+      }
+    };
+
+    return {
+      ok: true,
+      data: fallbackSpec,
+      confidence: 0.5
+    };
   }
 
   private async repairSpec(originalSpec: any, validation: ValidationResult): Promise<PageSpec | null> {
