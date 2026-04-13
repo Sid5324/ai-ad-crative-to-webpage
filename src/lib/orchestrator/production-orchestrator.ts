@@ -279,7 +279,7 @@ Return valid JSON matching the PageSpec schema.
 `;
 
     try {
-      const raw = await groqCall('mixtral-8x7b-32768', prompt, { type: 'json_object' });
+      const raw = await groqCall('llama-3.3-70b-versatile', prompt, { type: 'json_object' });
       const spec = raw as any;
 
       // Validate immediately

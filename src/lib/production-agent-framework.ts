@@ -249,7 +249,7 @@ Return JSON structure:
 }`;
 
     try {
-      const response = await groqCall('mixtral-8x7b-32768', prompt, { type: 'json_object' });
+      const response = await groqCall('llama-3.3-70b-versatile', prompt, { type: 'json_object' });
       return CopySchema.parse(response);
     } catch (error) {
       throw new Error(`COPY_GENERATION_FAILED: ${error.message}`);
