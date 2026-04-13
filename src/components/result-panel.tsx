@@ -122,7 +122,7 @@ export default function ResultPanel({
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#71717a' }}>Sections:</span>
-              <span style={{ color: '#fafafa' }}>{result.spec.sections?.length || 0}</span>
+              <span style={{ color: '#fafafa' }}>{result.spec.sections?.length || result.spec.benefits?.length || 0}</span>
             </div>
           </div>
         </div>

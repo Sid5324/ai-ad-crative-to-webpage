@@ -3,6 +3,32 @@ import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { productionOrchestrator } from '@/lib/orchestrator/production-orchestrator';
 
+// Helper to flatten nested spec for React
+function flattenSpec(spec: any): any {
+  if (!spec) return {};
+  
+  return {
+    brand: spec.brand?.canonicalName || spec.brand || 'Brand',
+    category: spec.category?.primary || spec.category || 'other',
+    confidence: spec.brand?.confidence || spec.confidence || 0.5,
+    hero: {
+      eyebrow: spec.hero?.eyebrow || '',
+      headline: spec.hero?.headline || spec.hero?.headline?.headline || 'Headline',
+      subheadline: spec.hero?.subheadline || spec.hero?.subheadline?.subheadline || 'Subheadline',
+      primaryCta: typeof spec.hero?.primaryCta === 'string' ? spec.hero.primaryCta : spec.hero?.primaryCta?.label || 'Get Started',
+      secondaryCta: typeof spec.hero?.secondaryCta === 'string' ? spec.hero.secondaryCta : spec.hero?.secondaryCta?.label || ''
+    },
+    stats: spec.stats || [],
+    benefits: spec.benefits || [],
+    trustSignals: spec.trustSignals || [],
+    designTokens: {
+      primaryColor: spec.designTokens?.primaryColor || '#1E293B',
+      backgroundColor: spec.designTokens?.backgroundColor || '#FFFFFF',
+      surfaceColor: spec.designTokens?.surfaceColor || '#F8FAFC'
+    }
+  };
+}
+
 const PREVIEWS: Record<string, any> = {};
 
 export async function POST(req: Request) {
@@ -39,16 +65,17 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // Create preview
+    // Create preview - flatten spec for React
+    const flattenedSpec = flattenSpec(result.spec);
     const previewId = nanoid(10);
     PREVIEWS[previewId] = {
-      spec: result.spec,
+      spec: flattenedSpec,
       html: result.html
     };
 
     console.log('✅ Generated:');
-    console.log('   Brand:', result.spec?.brand?.canonicalName);
-    console.log('   Category:', result.spec?.category?.primary);
+    console.log('   Brand:', flattenedSpec.brand);
+    console.log('   Category:', flattenedSpec.category);
     console.log('   Confidence:', result.confidence);
 
     return NextResponse.json({
@@ -56,7 +83,7 @@ export async function POST(req: Request) {
       previewId,
       previewUrl: `/api/preview?id=${previewId}`,
       html: result.html,
-      spec: result.spec,
+      spec: flattenedSpec,
       confidence: result.confidence,
       issues: result.issues,
       engine: 'production-schema-orchestrator-v2.0'
