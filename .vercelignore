@@ -1,0 +1,42 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Testing
+coverage
+
+# Misc
+.DS_Store
+*.log
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+
+# IDE
+.vscode
+.idea
+
+# Git
+.git
+
+# Test artifacts
+*.yml
+*.yaml
+test-*.js
+test_app.py
+
+# Dev files
+nul

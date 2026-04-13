@@ -1,8 +1,10 @@
-import { list } from '@vercel/blob';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// In-memory storage (module-level)
+const HTML_STORAGE: Record<string, string> = {};
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -16,23 +18,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // List all blobs in previews folder
-    const result = await list({ prefix: 'previews/' });
-    const blobs = result.blobs || [];
-    
-    // Find matching blob
-    const blob = blobs.find(b => b.pathname?.includes(id));
-    
-    if (blob?.url) {
-      // Fetch the HTML content directly and return it
-      const response = await fetch(blob.url);
-      const html = await response.text();
-      
-      return new NextResponse(html, {
-        headers: { 
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-cache'
-        }
+    // Check in-memory storage
+    if (HTML_STORAGE[id]) {
+      return new NextResponse(HTML_STORAGE[id], {
+        headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' }
       });
     }
 

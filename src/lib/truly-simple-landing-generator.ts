@@ -137,14 +137,21 @@ export async function generateTrulySimpleLandingPage(input: LandingPageInput): P
     console.log('[SimpleGenerator] Step 1: Extracting brand...');
     brand = await extractBrandFromUrl(input.targetUrl);
     
-    // Validate brand output - if invalid, reject immediately (don't continue)
-    if (!brand.name || brand.name === 'Business Name' || brand.confidence < 0.3) {
-      sm.reject('INVALID_BRAND', `Brand extraction failed: ${brand.name}`);
+    // TERMINAL BRAND VALIDATION - confidence < 0.8 = STOP PIPELINE
+    if (brand.confidence < 0.8) {
+      sm.reject('BRAND_REJECTED', `Brand confidence ${brand.confidence.toFixed(2)} < 0.8 threshold`);
+      return buildErrorOutput(sm, startTime);
+    }
+
+    // TERMINAL CATEGORY VALIDATION - generic categories = STOP PIPELINE
+    const genericCategories = ['business', 'company', 'service', 'product'];
+    if (genericCategories.includes(brand.category.toLowerCase())) {
+      sm.reject('BRAND_REJECTED', `Category "${brand.category}" too generic`);
       return buildErrorOutput(sm, startTime);
     }
     
     sm.transition(PipelineState.BRAND_OK);
-    console.log('[SimpleGenerator] Brand extracted:', { name: brand.name, confidence: brand.confidence });
+    console.log('[SimpleGenerator] Brand validated:', { name: brand.name, confidence: brand.confidence, category: brand.category });
   } catch (error) {
     sm.fail('BRAND_ERROR', error instanceof Error ? error.message : String(error));
     return buildErrorOutput(sm, startTime);

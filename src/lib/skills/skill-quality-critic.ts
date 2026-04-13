@@ -85,11 +85,11 @@ export function runQASkill(
   
   // ========== GENERIC COPY CHECK ==========
   const isGeneric = copyText.includes('bank-grade') || copyText.includes('industry-leading') || copyText.includes('trusted by thousands');
-  if (isGeneric && brand.confidence > 0.6) {
-    score -= 25;
+  if (isGeneric && brand.confidence > 0.8) {
+    score -= 15; // Reduced from 25
     issues.push({
       code: 'GENERIC_HALLUCINATION',
-      severity: 'high',
+      severity: 'medium', // Changed from high
       message: 'Generic copied found - not brand specific',
       field: 'copy',
       修复: 'tighten-copy'
@@ -99,10 +99,10 @@ export function runQASkill(
   // Banned phrases
   for (const phrase of BANNED_PHRASES) {
     if (copyText.includes(phrase)) {
-      score -= 15;
+      score -= 10; // Reduced from 15
       issues.push({
         code: 'BANNED_PHRASE',
-        severity: 'high',
+        severity: 'medium', // Changed from high
         message: `Generic phrase found: "${phrase}"`,
         field: 'copy',
         修复: 'tighten-copy'

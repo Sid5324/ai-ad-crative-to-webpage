@@ -96,27 +96,28 @@ export default function ResultPanel({
             📄 Generated Page Details
           </div>
 
-          <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
+          {/* Support both old and new spec formats */}
+            <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#71717a' }}>Brand:</span>
-              <span style={{ color: '#fafafa' }}>{result.spec.brand}</span>
+              <span style={{ color: '#fafafa' }}>{result.spec?.brand?.name || result.spec?.brand || 'Brand'}</span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#71717a' }}>Audience:</span>
-              <span style={{ color: '#fafafa' }}>{result.spec.audience}</span>
+              <span style={{ color: '#71717a' }}>Category:</span>
+              <span style={{ color: '#fafafa' }}>{result.spec?.brand?.category || 'Business'}</span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#71717a' }}>Hero Headline:</span>
               <span style={{ color: '#fafafa', fontSize: '13px', maxWidth: '60%' }}>
-                {result.spec.hero?.headline?.substring(0, 50) || 'Not available'}...
+                {result.spec?.copy?.hero?.headline?.substring(0, 50) || result.spec?.hero?.headline?.substring(0, 50) || 'Not available'}
               </span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#71717a' }}>Primary CTA:</span>
-              <span style={{ color: '#fafafa' }}>{result.spec.hero?.primaryCTA?.label || 'Not available'}</span>
+              <span style={{ color: '#fafafa' }}>{result.spec?.copy?.hero?.primaryCta || result.spec?.hero?.primary_cta?.label || 'Get Started'}</span>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -212,11 +213,10 @@ export default function ResultPanel({
             📄 Generated Page Spec
           </div>
           <div style={{ fontSize: '12px', color: '#71717a', display: 'grid', gap: '4px' }}>
-            <div><span style={{ color: '#52525b' }}>Brand:</span> {result.spec.brand || 'Unknown'}</div>
-            <div><span style={{ color: '#52525b' }}>Audience:</span> {result.spec.audience || 'unknown'}</div>
-            <div><span style={{ color: '#52525b' }}>Goal:</span> {result.spec.pageGoal || 'Drive conversions'}</div>
-            <div><span style={{ color: '#52525b' }}>Sections:</span> {result.spec.sections?.length || 0}</div>
-            <div><span style={{ color: '#52525b' }}>Hero CTA:</span> {result.spec.hero?.primaryCTA?.label || 'Shop Now'}</div>
+            {/* Support both old spec format and new orchestrator format */}
+            <div><span style={{ color: '#52525b' }}>Brand:</span> {result.spec?.brand?.name || result.spec?.brand || 'Unknown'}</div>
+            <div><span style={{ color: '#52525b' }}>Category:</span> {result.spec?.brand?.category || result.spec?.audience || 'Business'}</div>
+            <div><span style={{ color: '#52525b' }}>Quality:</span> {result.qualityScore || 0}/100</div>
           </div>
         </div>
       )}

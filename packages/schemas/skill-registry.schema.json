@@ -1,0 +1,28 @@
+// packages/schemas/skill-registry.schema.json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "agent_name": { "type": "string" },
+    "mandatory_skills": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "optional_skills": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tool_bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "skill": { "type": "string" },
+          "tool": { "type": "string" }
+        },
+        "required": ["skill", "tool"]
+      }
+    }
+  },
+  "required": ["agent_name", "mandatory_skills"]
+}

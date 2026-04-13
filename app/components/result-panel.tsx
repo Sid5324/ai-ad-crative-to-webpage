@@ -89,25 +89,7 @@ export default function ResultPanel({
         ✅ Your Page is Ready!
       </div>
 
-      {/* Live Preview Iframe */}
-      {result.renderedHtml && (
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 600, color: '#a1a1aa', marginBottom: '8px' }}>
-            📺 Live Preview
-          </div>
-          <iframe
-            srcDoc={result.renderedHtml}
-            style={{
-              width: '100%',
-              height: '450px',
-              border: '1px solid #3f3f46',
-              borderRadius: '8px',
-              background: '#ffffff',
-            }}
-            title="Landing Page Preview"
-          />
-        </div>
-      )}
+      {/* Large Preview - Shows in main page */}
 
       {/* Quality Score */}
       <div style={{ fontSize: '13px', color: '#71717a', marginBottom: '16px' }}>
@@ -169,11 +151,10 @@ export default function ResultPanel({
             📄 Generated Page Spec
           </div>
           <div style={{ fontSize: '12px', color: '#71717a', display: 'grid', gap: '4px' }}>
-            <div><span style={{ color: '#52525b' }}>Brand:</span> {result.spec.brand || 'Unknown'}</div>
-            <div><span style={{ color: '#52525b' }}>Audience:</span> {result.spec.audience || 'unknown'}</div>
-            <div><span style={{ color: '#52525b' }}>Goal:</span> {result.spec.pageGoal || 'Drive conversions'}</div>
-            <div><span style={{ color: '#52525b' }}>Sections:</span> {result.spec.sections?.length || 0}</div>
-            <div><span style={{ color: '#52525b' }}>Hero CTA:</span> {result.spec.hero?.primaryCTA?.label || 'Shop Now'}</div>
+            {/* Support both old spec format and new orchestrator format */}
+            <div><span style={{ color: '#52525b' }}>Brand:</span> {result.spec?.brand?.name || result.spec?.brand || 'Unknown'}</div>
+            <div><span style={{ color: '#52525b' }}>Category:</span> {result.spec?.brand?.category || result.spec?.audience || 'Business'}</div>
+            <div><span style={{ color: '#52525b' }}>Quality:</span> {result.qualityScore || 0}/100</div>
           </div>
         </div>
       )}

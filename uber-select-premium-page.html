@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uber Select - Premium Rides with Top-Rated Drivers | Luxury Transportation</title>
+  <meta name="description" content="Experience premium transportation with Uber Select. Ride in luxury vehicles driven by top-rated professional drivers. Book your premium ride today.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #000000, #1a1a1a, #2a2a2a);
+      color: #ffffff;
+    }
+
+    .luxury-gradient {
+      background: linear-gradient(135deg, #000000, #1a1a1a);
+    }
+
+    .premium-cta {
+      background: linear-gradient(135deg, #000000, #333333);
+      color: white;
+      border: 2px solid #ffffff;
+    }
+
+    .premium-cta:hover {
+      background: linear-gradient(135deg, #333333, #555555);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .luxury-gold {
+      color: #d4af37;
+    }
+
+    .section-bg {
+      background: #0a0a0a;
+    }
+
+    .luxury-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .stat-glow {
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+    }
+
+    @keyframes luxuryFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .luxury-float {
+      animation: luxuryFloat 4s ease-in-out infinite;
+    }
+
+    .text-shadow {
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body class="antialiased">
+  <!-- Navigation -->
+  <nav class="bg-black/50 backdrop-blur-lg border-b border-white/10 py-4 px-6 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="text-2xl font-bold">Uber</div>
+      <div class="hidden md:flex space-x-8">
+        <a href="#" class="hover:text-gray-300 transition-colors">Ride</a>
+        <a href="#" class="hover:text-gray-300 transition-colors">Reserve</a>
+        <a href="#" class="luxury-gold font-semibold">Uber Select</a>
+        <a href="#" class="hover:text-gray-300 transition-colors">Uber Reserve</a>
+      </div>
+      <button class="premium-cta px-6 py-2 rounded-lg font-semibold">
+        Download App
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section - Premium Consumer Focus -->
+  <section class="luxury-gradient min-h-screen flex items-center justify-center py-20 px-6 relative overflow-hidden">
+    <!-- Luxury background effects -->
+    <div class="absolute inset-0 opacity-20">
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-gold-400 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-white rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="max-w-6xl mx-auto text-center relative z-10">
+      <div class="mb-8">
+        <div class="inline-block px-6 py-3 bg-black/30 backdrop-blur-lg rounded-full text-sm font-medium mb-6 border border-white/20">
+          <span class="luxury-gold">★</span> Premium Transportation Experience
+        </div>
+
+        <h1 class="text-5xl md:text-7xl font-black mb-8 text-shadow leading-tight">
+          Ride in <span class="luxury-gold">Luxury</span><br>
+          with Top-Rated Drivers
+        </h1>
+
+        <p class="text-xl md:text-2xl mb-12 max-w-4xl mx-auto opacity-90 leading-relaxed">
+          Experience premium transportation with professional drivers, luxury vehicles,
+          and unparalleled comfort. Available worldwide, whenever you need it.
+        </p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+        <button class="premium-cta text-xl font-bold px-12 py-6 rounded-2xl shadow-2xl transform transition-all duration-300">
+          Book Uber Select
+        </button>
+        <button class="bg-white/10 hover:bg-white/20 text-white font-bold px-12 py-6 rounded-2xl text-xl backdrop-blur-sm border border-white/20 transform hover:scale-105 transition-all duration-300">
+          Download Uber App
+        </button>
+      </div>
+
+      <!-- Trust indicators -->
+      <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
+        <div class="flex flex-col items-center">
+          <div class="text-3xl mb-2">🛡️</div>
+          <div class="text-lg font-semibold">Verified Drivers</div>
+          <div class="text-sm opacity-75">Background checked & rated 4.8+</div>
+        </div>
+        <div class="flex flex-col items-center">
+          <div class="text-3xl mb-2">🚗</div>
+          <div class="text-lg font-semibold">Luxury Vehicles</div>
+          <div class="text-sm opacity-75">Premium sedans & SUVs</div>
+        </div>
+        <div class="flex flex-col items-center">
+          <div class="text-3xl mb-2">📍</div>
+          <div class="text-lg font-semibold">Real-Time Tracking</div>
+          <div class="text-sm opacity-75">Share your ride with loved ones</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="py-20 px-6 bg-gradient-to-r from-gray-900 to-black">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-3 gap-12 text-center">
+        <div>
+          <div class="text-5xl font-black luxury-gold stat-glow mb-4">5★</div>
+          <div class="text-xl font-semibold mb-2">Average Driver Rating</div>
+          <div class="text-gray-400">Top-rated professional drivers</div>
+        </div>
+        <div>
+          <div class="text-5xl font-black luxury-gold stat-glow mb-4">50M+</div>
+          <div class="text-xl font-semibold mb-2">Rides Completed</div>
+          <div class="text-gray-400">Millions of satisfied customers</div>
+        </div>
+        <div>
+          <div class="text-5xl font-black luxury-gold stat-glow mb-4">65+</div>
+          <div class="text-xl font-semibold mb-2">Countries</div>
+          <div class="text-gray-400">Available worldwide</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits Section - Premium Consumer Focus -->
+  <section class="section-bg py-24 px-6">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-20">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6">
+          Why Choose <span class="luxury-gold">Uber Select</span>
+        </h2>
+        <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+          Experience the pinnacle of transportation luxury with our premium service
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="luxury-card p-8 rounded-2xl luxury-float">
+          <div class="w-16 h-16 bg-gold-500/20 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+            <span class="text-3xl">⭐</span>
+          </div>
+          <h3 class="text-xl font-bold mb-4 text-center">Top-Rated Drivers</h3>
+          <p class="text-gray-300 text-center leading-relaxed">
+            Every driver is carefully vetted, trained, and maintains a 4.8+ star rating
+            for exceptional service and professionalism.
+          </p>
+        </div>
+
+        <div class="luxury-card p-8 rounded-2xl luxury-float" style="animation-delay: 0.5s">
+          <div class="w-16 h-16 bg-gold-500/20 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+            <span class="text-3xl">🚗</span>
+          </div>
+          <h3 class="text-xl font-bold mb-4 text-center">Luxury Vehicles</h3>
+          <p class="text-gray-300 text-center leading-relaxed">
+            Travel in premium sedans, SUVs, and luxury vehicles for maximum comfort,
+            style, and sophistication.
+          </p>
+        </div>
+
+        <div class="luxury-card p-8 rounded-2xl luxury-float" style="animation-delay: 1s">
+          <div class="w-16 h-16 bg-gold-500/20 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+            <span class="text-3xl">🤵</span>
+          </div>
+          <h3 class="text-xl font-bold mb-4 text-center">Professional Service</h3>
+          <p class="text-gray-300 text-center leading-relaxed">
+            Experience white-glove service from uniformed drivers with premium amenities
+            and impeccable presentation.
+          </p>
+        </div>
+
+        <div class="luxury-card p-8 rounded-2xl luxury-float" style="animation-delay: 1.5s">
+          <div class="w-16 h-16 bg-gold-500/20 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+            <span class="text-3xl">🛡️</span>
+          </div>
+          <h3 class="text-xl font-bold mb-4 text-center">Safety First</h3>
+          <p class="text-gray-300 text-center leading-relaxed">
+            Advanced safety features, real-time tracking, and 24/7 support provide
+            complete peace of mind.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Safety Section -->
+  <section class="py-24 px-6 bg-gradient-to-r from-gray-800 to-gray-900">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6">
+          Your <span class="luxury-gold">Safety</span> is Our Priority
+        </h2>
+        <p class="text-xl text-gray-300 max-w-3xl mx-auto">
+          Comprehensive safety measures ensure every Uber Select ride is secure and comfortable
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-12">
+        <div class="text-center">
+          <div class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span class="text-4xl">✓</span>
+          </div>
+          <h3 class="text-2xl font-bold mb-4">Verified Drivers</h3>
+          <p class="text-gray-300 leading-relaxed">
+            All drivers undergo rigorous background checks, vehicle inspections,
+            and continuous monitoring for your safety.
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span class="text-4xl">📍</span>
+          </div>
+          <h3 class="text-2xl font-bold mb-4">Real-Time Tracking</h3>
+          <p class="text-gray-300 leading-relaxed">
+            Share your trip details with loved ones and track your ride
+            in real-time from pickup to destination.
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span class="text-4xl">🆘</span>
+          </div>
+          <h3 class="text-2xl font-bold mb-4">24/7 Support</h3>
+          <p class="text-gray-300 leading-relaxed">
+            Round-the-clock customer support available for any questions,
+            concerns, or emergency situations.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works - Consumer Journey -->
+  <section class="section-bg py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-20">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6">
+          How to Book Your <span class="luxury-gold">Premium Ride</span>
+        </h2>
+        <p class="text-xl text-gray-300">
+          Four simple steps to luxury transportation
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-gold-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-black">
+            1
+          </div>
+          <h3 class="text-xl font-bold mb-4">Download the App</h3>
+          <p class="text-gray-300">
+            Get the Uber app for iOS or Android to access premium services instantly.
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-16 h-16 bg-gold-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-black">
+            2
+          </div>
+          <h3 class="text-xl font-bold mb-4">Set Your Location</h3>
+          <p class="text-gray-300">
+            Enter your pickup location and destination for instant pricing and availability.
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-16 h-16 bg-gold-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-black">
+            3
+          </div>
+          <h3 class="text-xl font-bold mb-4">Choose Premium</h3>
+          <p class="text-gray-300">
+            Select "Uber Select" from vehicle options for luxury transportation.
+          </p>
+        </div>
+
+        <div class="text-center">
+          <div class="w-16 h-16 bg-gold-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold text-black">
+            4
+          </div>
+          <h3 class="text-xl font-bold mb-4">Enjoy the Ride</h3>
+          <p class="text-gray-300">
+            Sit back and enjoy professional service to your destination in comfort.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="py-24 px-6 bg-gradient-to-r from-black to-gray-900">
+    <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-4xl md:text-5xl font-bold mb-16">
+        What Our <span class="luxury-gold">Premium Customers</span> Say
+      </h2>
+
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="luxury-card p-8 rounded-2xl">
+          <div class="flex items-center mb-6">
+            <div class="flex text-gold-400">
+              ★★★★★
+            </div>
+            <span class="ml-2 text-gray-400">5.0</span>
+          </div>
+          <p class="text-lg mb-6 italic">
+            "Uber Select exceeded my expectations. The driver was professional,
+            the vehicle was immaculate, and the service was flawless. Worth every penny."
+          </p>
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-gold-500 rounded-full flex items-center justify-center mr-3">
+              <span class="text-black font-bold">S</span>
+            </div>
+            <div>
+              <div class="font-semibold">Sarah Johnson</div>
+              <div class="text-sm text-gray-400">Executive Director</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="luxury-card p-8 rounded-2xl">
+          <div class="flex items-center mb-6">
+            <div class="flex text-gold-400">
+              ★★★★★
+            </div>
+            <span class="ml-2 text-gray-400">5.0</span>
+          </div>
+          <p class="text-lg mb-6 italic">
+            "For important business meetings or special occasions, Uber Select is my go-to.
+            The consistency and quality of service is outstanding."
+          </p>
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-gold-500 rounded-full flex items-center justify-center mr-3">
+              <span class="text-black font-bold">M</span>
+            </div>
+            <div>
+              <div class="font-semibold">Michael Chen</div>
+              <div class="text-sm text-gray-400">Business Executive</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="section-bg py-24 px-6">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6">
+          Premium Ride <span class="luxury-gold">FAQ</span>
+        </h2>
+        <p class="text-xl text-gray-300">
+          Everything you need to know about Uber Select
+        </p>
+      </div>
+
+      <div class="space-y-6">
+        <div class="luxury-card p-6 rounded-xl">
+          <h3 class="text-lg font-semibold mb-3">How much does Uber Select cost?</h3>
+          <p class="text-gray-300">Prices vary by location and demand. Use the app to see current rates for your trip. Premium service comes at a premium price but delivers exceptional value.</p>
+        </div>
+
+        <div class="luxury-card p-6 rounded-xl">
+          <h3 class="text-lg font-semibold mb-3">How do I book Uber Select?</h3>
+          <p class="text-gray-300">Open the Uber app, enter your destination, and select "Select" from the vehicle options. The premium service will be clearly marked.</p>
+        </div>
+
+        <div class="luxury-card p-6 rounded-xl">
+          <h3 class="text-lg font-semibold mb-3">Are drivers background checked?</h3>
+          <p class="text-gray-300">Yes, all Uber drivers undergo comprehensive background checks and vehicle inspections. Uber Select drivers meet additional standards for premium service.</p>
+        </div>
+
+        <div class="luxury-card p-6 rounded-xl">
+          <h3 class="text-lg font-semibold mb-3">What vehicles are used?</h3>
+          <p class="text-gray-300">Uber Select uses premium sedans, SUVs, and luxury vehicles depending on availability in your area. All vehicles are well-maintained and cleaned regularly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA Section -->
+  <section class="luxury-gradient py-24 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-4xl md:text-5xl font-bold mb-6">
+        Ready for a <span class="luxury-gold">Premium Ride</span> Experience?
+      </h2>
+      <p class="text-xl text-gray-300 mb-12 max-w-2xl mx-auto">
+        Book Uber Select today and discover the difference professional transportation makes.
+        Luxury, safety, and convenience whenever you need it.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-6 justify-center">
+        <button class="premium-cta text-xl font-bold px-12 py-6 rounded-2xl shadow-2xl transform transition-all duration-300">
+          Book Uber Select
+        </button>
+        <button class="bg-white/10 hover:bg-white/20 text-white font-bold px-12 py-6 rounded-2xl text-xl backdrop-blur-sm border border-white/20 transform hover:scale-105 transition-all duration-300">
+          Download App
+        </button>
+      </div>
+
+      <div class="mt-8 text-sm text-gray-400">
+        Available in 65+ countries • 50M+ rides completed • 5★ average rating
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-black py-16 px-6 border-t border-white/10">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid md:grid-cols-4 gap-8 mb-12">
+        <div>
+          <div class="text-2xl font-bold mb-4">Uber</div>
+          <p class="text-gray-400">Moving the way the world moves.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Ride</h4>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="#" class="hover:text-white transition-colors">Uber Reserve</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Uber Select</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Hourly</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Company</h4>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="#" class="hover:text-white transition-colors">About</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Safety</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-4">Support</h4>
+          <ul class="space-y-2 text-gray-400">
+            <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Contact</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">COVID-19</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
+        <div class="text-gray-400 text-sm mb-4 md:mb-0">
+          © 2024 Uber Technologies Inc. All rights reserved.
+        </div>
+        <div class="flex gap-6 text-sm text-gray-400">
+          <a href="#" class="hover:text-white transition-colors">Privacy</a>
+          <a href="#" class="hover:text-white transition-colors">Terms</a>
+          <a href="#" class="hover:text-white transition-colors">Accessibility</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Premium animations and interactions
+    document.addEventListener('DOMContentLoaded', function() {
+      // Smooth scrolling for navigation
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+
+      // Luxury scroll-triggered animations
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }
+        });
+      }, { threshold: 0.1 });
+
+      // Animate luxury cards
+      document.querySelectorAll('.luxury-card').forEach(card => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+        observer.observe(card);
+      });
+
+      // CTA tracking
+      document.querySelectorAll('.premium-cta, button').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          if (this.textContent?.includes('Book') || this.textContent?.includes('Download')) {
+            console.log('Premium CTA clicked:', this.textContent.trim());
+            // In production, this would send conversion tracking
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
