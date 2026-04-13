@@ -1,45 +1,41 @@
-// app/api/generate/route.ts - Simplified Generator ( Single Sequential Pipeline)
+// app/api/generate/route.ts - Production Schema-Based Generator
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { generateTrulySimpleLandingPage, type LandingPageInput } from '@/lib/truly-simple-landing-generator';
+import { productionOrchestrator } from '@/lib/orchestrator/production-orchestrator';
 
 const PREVIEWS: Record<string, any> = {};
 
 export async function POST(req: Request) {
-  console.log('🚀 SIMPLIFIED LANDING PAGE GENERATION START');
+  console.log('🚀 PRODUCTION LANDING PAGE GENERATION START');
 
   const body = await req.json();
-  const input: LandingPageInput = {
-    adImage: body.adImageUrl || undefined,
-    adText: body.adInputValue || body.adCopy || undefined,
-    category: body.category || 'Business',
-    targetUrl: body.targetUrl || body.url || ''
+  const input = {
+    url: body.targetUrl || body.url || '',
+    adText: body.adInputValue || body.adCopy || undefined
   };
 
   try {
-    if (!input.targetUrl) {
+    if (!input.url) {
       return NextResponse.json({ success: false, error: 'targetUrl required' }, { status: 400 });
     }
 
-    if (!input.adImage && !input.adText) {
+    if (!body.adImageUrl && !input.adText) {
       return NextResponse.json({ success: false, error: 'Either adImageUrl or adInputValue required' }, { status: 400 });
     }
 
-    console.log('📋 Input:', input.adImage ? 'image' : 'text');
-    console.log('🎯 Target:', input.targetUrl);
+    console.log('📋 Input:', body.adImageUrl ? 'image' : 'text');
+    console.log('🎯 Target:', input.url);
 
     // SINGLE SEQUENTIAL PIPELINE - No dual paths, no parallel execution
-    const result = await generateTrulySimpleLandingPage(input);
+    // Generate with production orchestrator (handles HTTP 403 gracefully)
+    const result = await productionOrchestrator.generateLandingPage(input);
 
     if (!result.success) {
-      const meta = result.metadata as any || {};
       return NextResponse.json({
         success: false,
-        error: meta.errors?.[0]?.message || 'Generation failed',
-        state: meta.state,
-        qaScore: meta.qaScore,
-        stateHistory: meta.stateHistory,
-        debug: { errors: meta.errors }
+        error: result.issues[0] || 'Generation failed',
+        issues: result.issues,
+        confidence: result.confidence
       }, { status: 400 });
     }
 
@@ -47,16 +43,13 @@ export async function POST(req: Request) {
     const previewId = nanoid(10);
     PREVIEWS[previewId] = {
       spec: result.spec,
-      html: result.html,
-      metadata: result.metadata
+      html: result.html
     };
 
     console.log('✅ Generated:');
-    console.log('   Brand:', result.spec?.brand?.name);
-    console.log('   Category:', result.spec?.brand?.category);
-    const meta = result.metadata as any;
-    console.log('   QA Score:', meta?.qaScore);
-    console.log('   State:', meta?.state);
+    console.log('   Brand:', result.spec?.brand?.canonicalName);
+    console.log('   Category:', result.spec?.category?.primary);
+    console.log('   Confidence:', result.confidence);
 
     return NextResponse.json({
       success: true,
@@ -64,11 +57,9 @@ export async function POST(req: Request) {
       previewUrl: `/api/preview?id=${previewId}`,
       html: result.html,
       spec: result.spec,
-      qualityScore: meta?.qaScore || 85,
-      engine: 'truly-simple-v2.0',
-      state: meta?.state,
-      stateHistory: meta?.stateHistory,
-      debug: { errors: meta?.errors }
+      confidence: result.confidence,
+      issues: result.issues,
+      engine: 'production-schema-orchestrator-v2.0'
     });
 
   } catch (error: any) {
