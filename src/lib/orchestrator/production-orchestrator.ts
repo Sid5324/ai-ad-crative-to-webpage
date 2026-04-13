@@ -286,20 +286,22 @@ Return valid JSON matching the PageSpec schema.
         try {
           raw = JSON.parse(raw);
         } catch {
-          return {
-            ok: false,
-            error: 'Failed to parse LLM response as JSON',
-            confidence: 0
-          };
+          // Use fallback
+          return this.generateFallbackSpec(brand, category);
         }
       }
       
       const spec = raw as any;
 
-      // Validate immediately
+      // Pre-process to ensure required fields exist
+      if (!spec.brand || !spec.category || !spec.hero || !spec.benefits) {
+        return this.generateFallbackSpec(brand, category);
+      }
+
+      // Validate immediately (but be lenient)
       const validation = validateSpec(spec);
 
-      if (!validation.ok) {
+      if (!validation.ok && !validation.repairable) {
         // Try repair if repairable
         if (validation.repairable) {
           const repaired = await this.repairSpec(spec, validation);
