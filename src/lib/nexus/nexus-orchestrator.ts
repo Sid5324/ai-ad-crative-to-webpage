@@ -505,12 +505,48 @@ Return JSON:
         }
       );
 
-      // ========== STAGE 10: QA VALIDATOR (Agent #27) - LOCAL VALIDATION ==========
+      // ========== STAGE 10: QA VALIDATOR (Agent #27) - BLOCKING VALIDATION ==========
+// Now uses GCM (Global Context Manifest) for intent-aware validation
       const qaResult = await this.runAgent('qa-validator',
         { skill: 'validation, quality-check' },
         async () => {
-          // Local validation instead of LLM call (faster + saves tokens)
+          // GCM-based validation - checks gates from context
           const issues: string[] = [];
+          const gcmGates = (this as any).gcm?.gates || {};
+          
+          // 1. INTENT ALIGNMENT CHECK - Critical for preventing drift
+          const lower = html.toLowerCase();
+          if (gcmGates.audienceType === 'b2b') {
+            // For B2B, warn about consumer terms
+            const consumerTerms = ['order now', 'buy now', 'shop', 'add to cart', 'pizza', 'hungry'];
+            const foundConsumerTerms = consumerTerms.filter(t => lower.includes(t));
+            if (foundConsumerTerms.length > 0) {
+              issues.push(`INTENT_DRIFT: B2B page contains consumer terms: ${foundConsumerTerms.join(', ')}`);
+            }
+          } else if (gcmGates.audienceType === 'b2c') {
+            // For B2C, warn about business terms
+            const businessTerms = ['merchant', 'partner with', 'integrat', 'franchise'];
+            const foundBusinessTerms = businessTerms.filter(t => lower.includes(t));
+            if (foundBusinessTerms.length > 2) {
+              issues.push(`INTENT_DRIFT: B2C page contains too many B2B terms: ${foundBusinessTerms.join(', ')}`);
+            }
+          }
+          
+          // 2. PROOF POINTS CHECK - Ensure stats from ad are included
+          const proofPoints = (this as any).gcm?.research?.proofPoints || [];
+          for (const point of proofPoints) {
+            if (point.length >= 3 && !html.includes(point)) {
+              issues.push(`PROOF_POINT_MISSING: Stat "${point}" from ad not in output`);
+            }
+          }
+          
+          // 3. BRAND COLOR ENFORCEMENT
+          if (gcmGates.brandColorEnforced) {
+            const brandColor = (this as any).gcm?.research?.brandDNA?.primaryColor;
+            if (brandColor && !html.includes(brandColor)) {
+              issues.push(`BRAND_COLOR_MISSING: Primary color ${brandColor} not in output`);
+            }
+          }
 
           // Check structure
           if (!html.includes('<!DOCTYPE')) issues.push('Missing DOCTYPE');
