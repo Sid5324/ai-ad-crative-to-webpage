@@ -90,7 +90,8 @@ export async function geminiCall(model: string, prompt: string, options?: { imag
 
 export const GEMINI_MODELS = [
   process.env.GEMINI_MODEL,
-  'gemini-2.0-flash',
-  'gemini-1.5-flash-8b',
+  'gemini-1.5-pro',
   'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+  'gemini-pro',
 ].filter(Boolean) as string[];
