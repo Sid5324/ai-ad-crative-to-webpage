@@ -21,7 +21,18 @@ export default function Home() {
   const { ref, inView } = useInView({ threshold: 0.1 });
 
   const handleGenerate = useCallback(async (data: { adInputType: 'image_url' | 'copy'; adInputValue: string; targetUrl: string }) => {
-    if (!data.adInputType || !data.adInputValue?.trim() || !data.targetUrl?.trim()) return;
+    console.log('🎯 Generate button clicked with:', data);
+
+    if (!data.adInputType || !data.adInputValue?.trim() || !data.targetUrl?.trim()) {
+      console.error('❌ Validation failed:', {
+        adInputType: !!data.adInputType,
+        adInputValue: !!data.adInputValue?.trim(),
+        targetUrl: !!data.targetUrl?.trim()
+      });
+      return;
+    }
+
+    console.log('✅ Validation passed, starting generation...');
 
     // 🚨 DEBUG: Log what frontend is sending
     console.log('📤 FRONTEND SENDING:', JSON.stringify(data, null, 2));
@@ -53,9 +64,11 @@ export default function Home() {
       if (data_response.success) {
         console.log('✅ API Success:', data_response);
         console.log('HTML received:', !!data_response.html);
+        console.log('HTML length:', data_response.html?.length || 0);
         console.log('Spec exists:', !!data_response.spec);
         setResult(data_response);
         setStep('rendering');
+        console.log('🔄 Result state set:', !!data_response.html);
       } else {
         console.error('❌ API Error:', data_response);
         // Handle error message - could be string or object
@@ -243,21 +256,35 @@ export default function Home() {
               overflow: 'auto',
               background: '#ffffff',
             }}>
-              <iframe
-                srcDoc={result.html}
-                style={{
-                  width: '100%',
+              {result.html ? (
+                <iframe
+                  srcDoc={result.html}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    border: 'none',
+                  }}
+                  title="Generated Landing Page"
+                  onError={(e) => {
+                    console.error('Iframe failed to load:', e);
+                  }}
+                  onLoad={() => {
+                    console.log('Iframe loaded successfully');
+                  }}
+                  sandbox="allow-scripts allow-same-origin"
+                />
+              ) : (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   height: '100%',
-                  border: 'none',
-                }}
-                title="Generated Landing Page"
-                onError={(e) => {
-                  console.error('Iframe failed to load:', e);
-                }}
-                onLoad={() => {
-                  console.log('Iframe loaded successfully');
-                }}
-              />
+                  color: '#666',
+                  fontSize: '18px'
+                }}>
+                  No HTML content available
+                </div>
+              )}
             </div>
           </div>
         )}
