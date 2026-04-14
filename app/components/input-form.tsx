@@ -25,23 +25,13 @@ export default function InputForm({ onGenerate, loading, currentStep }: InputFor
   async function handleImageUpload(file: File): Promise<string | null> {
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        return data.url;
-      } else {
-        throw new Error(data.error || 'Upload failed');
-      }
+      // For now, create a local object URL for the image
+      // TODO: Implement proper image upload to cloud storage
+      const url = URL.createObjectURL(file);
+      return url;
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload image');
+      alert('Failed to process image');
       return null;
     } finally {
       setIsUploading(false);
@@ -62,13 +52,21 @@ export default function InputForm({ onGenerate, loading, currentStep }: InputFor
     e.preventDefault();
     if (!adInputValue.trim() || !targetUrl.trim()) return;
 
-    await onGenerate({
+    const payload: any = {
       adInputType: adInputType,
-      adInputValue: adInputValue.trim(),
       targetUrl: targetUrl.trim(),
       audienceOverride: audienceOverride || undefined,
       toneOverride: toneOverride || undefined,
-    });
+    };
+
+    // Set the correct field based on input type
+    if (adInputType === 'copy') {
+      payload.adInputValue = adInputValue.trim();
+    } else {
+      payload.adImageUrl = adInputValue.trim();
+    }
+
+    await onGenerate(payload);
   }
 
   const inputStyle: React.CSSProperties = {

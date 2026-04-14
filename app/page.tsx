@@ -23,6 +23,9 @@ export default function Home() {
   const handleGenerate = useCallback(async (data: { adInputType: 'image_url' | 'copy'; adInputValue: string; targetUrl: string }) => {
     if (!data.adInputType || !data.adInputValue?.trim() || !data.targetUrl?.trim()) return;
 
+    // 🚨 DEBUG: Log what frontend is sending
+    console.log('📤 FRONTEND SENDING:', JSON.stringify(data, null, 2));
+
     setIsGenerating(true);
     setStep('analyzing');
     setResult(null);

@@ -515,18 +515,18 @@ Return JSON:
           const gcmGates = (this as any).gcm?.gates || {};
           
           // 1. INTENT ALIGNMENT CHECK - Critical for preventing drift
-          const lower = html.toLowerCase();
+          const htmlLower = html.toLowerCase();
           if (gcmGates.audienceType === 'b2b') {
             // For B2B, warn about consumer terms
             const consumerTerms = ['order now', 'buy now', 'shop', 'add to cart', 'pizza', 'hungry'];
-            const foundConsumerTerms = consumerTerms.filter(t => lower.includes(t));
+            const foundConsumerTerms = consumerTerms.filter(t => htmlLower.includes(t));
             if (foundConsumerTerms.length > 0) {
               issues.push(`INTENT_DRIFT: B2B page contains consumer terms: ${foundConsumerTerms.join(', ')}`);
             }
           } else if (gcmGates.audienceType === 'b2c') {
             // For B2C, warn about business terms
             const businessTerms = ['merchant', 'partner with', 'integrat', 'franchise'];
-            const foundBusinessTerms = businessTerms.filter(t => lower.includes(t));
+            const foundBusinessTerms = businessTerms.filter(t => htmlLower.includes(t));
             if (foundBusinessTerms.length > 2) {
               issues.push(`INTENT_DRIFT: B2C page contains too many B2B terms: ${foundBusinessTerms.join(', ')}`);
             }

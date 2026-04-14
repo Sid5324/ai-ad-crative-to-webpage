@@ -1,18 +1,49 @@
-// ACE-GCM: Global Context Manifest
-// Fixes "Context Vanishing Syndrome" by preserving findings across ALL agents
+// ACE-GCM: Global Context Manifest with ELASTIC WEIGHTING
+// Fixes "Context Vanishing Syndrome" AND "Tunnel Vision Trap"
+// - Uses probability vectors instead of binary locks
+// - Confidence gates create emergency brakes
+// - Self-correction without infinite loops
+
+export interface IntentWeight {
+  label: 'B2B' | 'B2C' | 'D2C';
+  weight: number;       // 0.0 - 1.0
+  evidence: string;      // Why this was scored this way
+}
+
+// NEW: Proof points with relevance tags
+export interface ProofPointWithRelevance {
+  value: string;
+  relevance: {
+    B2B?: number;   // Relevance to B2B audience (0-1)
+    B2C?: number;  // Relevance to B2C audience (0-1)
+  };
+  source: string;    // Where extracted from
+}
 
 export interface GlobalContextManifest {
+  // 🎯 ELASTIC WEIGHTING: Probability vector (not binary lock)
+  intent_weights: IntentWeight[];
+  
+  // 🎯 CONFIDENCE SCORE: Emergency brake threshold
+  // If below 0.7, trigger "Deep Research" loop
+  confidence_score: number;
+  
+  // 🎯 INTENT CHALLENGE LOG: Allows agents to challenge the lock
+  intent_challenge_log: IntentChallenge[];
+  
+  // 📊 PROOF POINTS with relevance tags
+  proofPoints: ProofPointWithRelevance[];
+  
   // Research Findings (from Agents 1-4)
   research: {
     audienceType: 'b2b' | 'b2c' | 'd2c' | 'unknown';
-    audienceJTBD: string; // Jobs to be Done
+    audienceJTBD: string;
     brandDNA: {
       primaryColor: string;
       accentColor: string;
       fontFamily: string;
       logoEmoji: string;
     };
-    proofPoints: string[]; // Non-negotiable stats to include
   };
   
   // Strategy (from Agents 5-6)
@@ -28,117 +59,212 @@ export interface GlobalContextManifest {
     brandColorEnforced: boolean;
     proofPointsIncluded: boolean;
     frameworkUsed: boolean;
+    semanticDriftScore: number;
+  };
+  
+  // Self-correction state
+  correction: {
+    retryCount: number;
+    maxRetries: number;
+    lastDriftReason?: string;
   };
   
   // State
   finalized: boolean;
 }
 
-// Create initial GCM from research agents
+export interface IntentChallenge {
+  agent: string;
+  timestamp: number;
+  concern: string;
+  recommendation: string;
+  resolved: boolean;
+}
+
+// Create initial GCM with ELASTIC WEIGHTING
 export function createGCM(input: {
   targetUrl: string;
   adContent: string;
   inferredCategory: string;
 }): GlobalContextManifest {
   
-  // Determine audience type from content analysis
-  const audienceType = detectAudienceType(input.adContent);
+  // Calculate probability distribution, NOT binary lock
+  const intentDistribution = calculateIntentWeights(input.adContent, input.targetUrl);
+  
+  // Calculate confidence based on evidence strength
+  const confidenceScore = calculateConfidenceScore(intentDistribution);
+  
+  // Extract proof points with relevance tags
+  const proofPoints = extractProofPointsWithRelevance(input.adContent, intentDistribution);
+  
+  // Determine primary intent from highest weight
+  const primaryIntent = getPrimaryIntent(intentDistribution);
   
   return {
+    intent_weights: intentDistribution,
+    confidence_score: confidenceScore,
+    intent_challenge_log: [],
+    proofPoints,
     research: {
-      audienceType,
-      audienceJTBD: extractJTBD(audienceType, input.adContent),
+      audienceType: primaryIntent,
+      audienceJTBD: extractJTBD(primaryIntent, input.adContent),
       brandDNA: {
-        primaryColor: '#FF3008', // Will be updated by brand analyzer
-        accentColor: '#FF4D4D',
+        primaryColor: '#1E293B',
+        accentColor: '#3B82F6',
         fontFamily: 'Inter',
         logoEmoji: detectCategoryEmoji(input.inferredCategory)
-      },
-      proofPoints: extractProofPoints(input.adContent)
+      }
     },
     strategy: {
-      headlineFramework: inferFramework(audienceType),
-      ctaPrimary: inferPrimaryCTA(audienceType),
-      ctaSecondary: inferSecondaryCTA(audienceType)
+      headlineFramework: inferFramework(primaryIntent),
+      ctaPrimary: inferPrimaryCTA(primaryIntent),
+      ctaSecondary: inferSecondaryCTA(primaryIntent)
     },
     gates: {
       contrastRatio: 4.5,
       brandColorEnforced: false,
       proofPointsIncluded: false,
-      frameworkUsed: false
+      frameworkUsed: false,
+      semanticDriftScore: 0
+    },
+    correction: {
+      retryCount: 0,
+      maxRetries: 3  // Cap to prevent infinite loops
     },
     finalized: false
   };
 }
 
-// Detect B2B vs B2C from content
-function detectAudienceType(content: string): 'b2b' | 'b2c' | 'd2c' | 'unknown' {
-  const lower = content.toLowerCase();
+// 🎯 ELASTIC WEIGHTING: Calculate probability distribution
+function calculateIntentWeights(content: string, targetUrl: string): IntentWeight[] {
+  const text = (content + ' ' + targetUrl).toLowerCase();
   
-  // B2B indicators
-  const b2bTerms = ['merchant', 'partner', 'restaurant owner', 'business', 'grow revenue', 'increase sales', 'enterprise', 'integrat'];
-  const b2bScore = b2bTerms.filter(t => lower.includes(t)).length;
+  // B2B terms with weights
+  const b2bTerms = [
+    { term: 'merchant', weight: 0.9 },
+    { term: 'partner', weight: 0.85 },
+    { term: 'business', weight: 0.7 },
+    { term: 'restaurant owner', weight: 0.95 },
+    { term: 'enterprise', weight: 0.8 },
+    { term: 'grow revenue', weight: 0.85 },
+    { term: 'increase sales', weight: 0.8 },
+    { term: 'b2b', weight: 0.95 },
+    { term: 'integrat', weight: 0.75 }
+  ];
   
-  // B2C indicators  
-  const b2cTerms = ['order now', 'delivered', 'food', 'eat', 'restaurant', 'buy', 'get started'];
-  const b2cScore = b2cTerms.filter(t => lower.includes(t)).length;
+  // B2C terms with weights
+  const b2cTerms = [
+    { term: 'order now', weight: 0.9 },
+    { term: 'delivered', weight: 0.7 },
+    { term: 'food', weight: 0.6 },
+    { term: 'eat', weight: 0.5 },
+    { term: 'hungry', weight: 0.7 },
+    { term: 'shop', weight: 0.6 },
+    { term: 'buy', weight: 0.5 },
+    { term: 'get started', weight: 0.4 },
+    { term: 'consumer', weight: 0.7 }
+  ];
   
-  if (b2bScore >= 2) return 'b2b';
-  if (b2cScore >= 2) return 'b2c';
-  return 'unknown';
+  // Calculate weighted scores
+  let b2bScore = 0;
+  let b2bEvidence: string[] = [];
+  for (const { term, weight } of b2bTerms) {
+    if (text.includes(term)) {
+      b2bScore += weight;
+      b2bEvidence.push(term);
+    }
+  }
+  
+  let b2cScore = 0;
+  let b2cEvidence: string[] = [];
+  for (const { term, weight } of b2cTerms) {
+    if (text.includes(term)) {
+      b2cScore += weight;
+      b2cEvidence.push(term);
+    }
+  }
+  
+  // Normalize to probability distribution
+  const total = b2bScore + b2cScore + 0.01; // Avoid division by zero
+  const b2bProb = b2bScore / total;
+  const b2cProb = b2cScore / total;
+  
+  return [
+    { 
+      label: 'B2B', 
+      weight: Math.min(1, b2bProb),
+      evidence: b2bEvidence.join(', ') || 'No evidence'
+    },
+    { 
+      label: 'B2C', 
+      weight: Math.min(1, b2cProb),
+      evidence: b2cEvidence.join(', ') || 'No evidence'
+    }
+  ];
 }
 
-// Extract Jobs to be Done
-function extractJTBD(audienceType: 'b2b' | 'b2c' | 'd2c' | 'unknown', content: string): string {
-  if (audienceType === 'b2b') {
-    return 'Struggling with off-premise sales and reaching new customers';
-  }
-  if (audienceType === 'b2c') {
-    return 'Wanting quick, convenient food delivery';
-  }
-  return 'General customer engagement';
+// 🎯 CONFIDENCE SCORE: Calculate confidence from evidence strength
+function calculateConfidenceScore(weights: IntentWeight[]): number {
+  const primary = Math.max(...weights.map(w => w.weight));
+  const secondary = weights
+    .filter(w => w.weight !== primary)
+    .reduce((max, w) => Math.max(max, w.weight), 0);
+  
+  // High confidence = strong primary, weak secondary
+  // Low confidence = weak primary OR strong secondary (ambiguous)
+  if (primary < 0.3) return 0.2;  // Too weak to decide
+  if (primary > 0.8 || secondary < 0.1) return 0.95;  // Clear winner
+  if (primary > 0.6) return 0.8;
+  return 0.5;  // Ambiguous - needs deep research
 }
 
-// Extract proof points (stats, numbers)
-function extractProofPoints(content: string): string[] {
-  const numbers = content.match(/\d+/g) || [];
-  const proofPoints: string[] = [];
+// 📊 PROOF POINTS with relevance tags
+function extractProofPointsWithRelevance(
+  content: string, 
+  weights: IntentWeight[]
+): ProofPointWithRelevance[] {
+  const numberMatches = content.match(/\d+[\d,]*\+?/g) || [];
+  const proofPoints: ProofPointWithRelevance[] = [];
   
-  for (const num of numbers) {
-    if (parseInt(num) > 100) {
-      proofPoints.push(num);
+  for (const num of numberMatches) {
+    const value = num.replace(/,/g, '');
+    const intVal = parseInt(value);
+    
+    if (intVal > 100) {
+      // Calculate relevance based on the number context
+      const b2bContext = ['merchant', 'partner', 'business', 'revenue', 'sales', 'grow', 'customer'];
+      const b2cContext = ['order', 'eat', 'food', 'delivered', 'happy', 'love', 'people'];
+      
+      const text = content.toLowerCase();
+      const b2bMatches = b2bContext.filter(t => text.includes(t)).length;
+      const b2cMatches = b2cContext.filter(t => text.includes(t)).length;
+      
+      proofPoints.push({
+        value: num,
+        relevance: {
+          B2B: b2bMatches > 0 ? Math.min(1, b2bMatches * 0.3) : 0,
+          B2C: b2cMatches > 0 ? Math.min(1, b2cMatches * 0.3) : 0
+        },
+        source: 'ad-content'
+      });
     }
   }
   
   return proofPoints;
 }
 
-// Infer headline framework based on audience
-function inferFramework(audienceType: 'b2b' | 'b2c' | 'd2c' | 'unknown'): 'AIDA' | 'PAS' | 'BAB' | 'Feature-Benefit' {
-  if (audienceType === 'b2b') return 'PAS'; // Problem-Agitation-Solution works for businesses
-  if (audienceType === 'b2c') return 'AIDA'; // Attention-Interest-Desire-Action for consumers
-  return 'Feature-Benefit';
+function getPrimaryIntent(weights: IntentWeight[]): 'b2b' | 'b2c' | 'd2c' | 'unknown' {
+  const maxWeight = weights.reduce((max, w) => w.weight > max.weight ? w : max, weights[0]);
+  
+  if (maxWeight.label === 'B2B') return 'b2b';
+  if (maxWeight.label === 'B2C') return 'b2c';
+  return 'unknown';
 }
 
-// Infer primary CTA based on audience
-function inferPrimaryCTA(audienceType: 'b2b' | 'b2c' | 'd2c' | 'unknown'): string {
-  const ctaMap = {
-    'b2b': 'Get Started',
-    'b2c': 'Order Now',
-    'd2c': 'Shop Now',
-    'unknown': 'Learn More'
-  };
-  return ctaMap[audienceType] || 'Learn More';
-}
-
-function inferSecondaryCTA(audienceType: 'b2b' | 'b2c' | 'd2c' | 'unknown'): string {
-  const ctaMap = {
-    'b2b': 'Schedule Demo',
-    'b2c': 'Browse Menu',
-    'd2c': 'Browse',
-    'unknown': 'Contact Us'
-  };
-  return ctaMap[audienceType] || 'Learn More';
+function extractJTBD(audienceType: string, content: string): string {
+  if (audienceType === 'b2b') return 'Struggling with off-premise sales';
+  if (audienceType === 'b2c') return 'Wanting quick, convenient delivery';
+  return 'General customer engagement';
 }
 
 function detectCategoryEmoji(category: string): string {
@@ -153,40 +279,82 @@ function detectCategoryEmoji(category: string): string {
   return emojis[category] || '⭐';
 }
 
-// Update GCM with findings from each agent
-export function updateGCM(
-  gcm: GlobalContextManifest,
-  agentName: string,
-  findings: any
-): GlobalContextManifest {
-  
-  switch (agentName) {
-    case 'ad-analyzer':
-      gcm.research.audienceType = findings.audienceType || gcm.research.audienceType;
-      break;
-      
-    case 'url-brand-analyzer':
-      gcm.research.brandDNA = {
-        ...gcm.research.brandDNA,
-        ...findings.brandDNA
-      };
-      gcm.gates.brandColorEnforced = true;
-      break;
-      
-    case 'offer-proof-guard':
-      gcm.research.proofPoints = findings.validatedProofPoints || gcm.research.proofPoints;
-      break;
-      
-    case 'copy-generator':
-      gcm.strategy.headlineFramework = findings.framework || gcm.strategy.headlineFramework;
-      gcm.gates.frameworkUsed = true;
-      break;
-  }
-  
-  return gcm;
+function inferFramework(audienceType: string): 'AIDA' | 'PAS' | 'BAB' | 'Feature-Benefit' {
+  if (audienceType === 'b2b') return 'PAS';
+  if (audienceType === 'b2c') return 'AIDA';
+  return 'Feature-Benefit';
 }
 
-// Finalize GCM - mark as complete
+function inferPrimaryCTA(audienceType: string): string {
+  const ctaMap: Record<string, string> = {
+    'b2b': 'Get Started',
+    'b2c': 'Order Now',
+    'd2c': 'Shop Now',
+    'unknown': 'Learn More'
+  };
+  return ctaMap[audienceType] || 'Learn More';
+}
+
+function inferSecondaryCTA(audienceType: string): string {
+  const ctaMap: Record<string, string> = {
+    'b2b': 'Schedule Demo',
+    'b2c': 'Browse Menu',
+    'd2c': 'Browse',
+    'unknown': 'Contact Us'
+  };
+  return ctaMap[audienceType] || 'Learn More';
+}
+
+// 🎯 GET PRIMARY INTENT: Returns the weighted primary intent
+export function getPrimaryIntentLabel(gcm: GlobalContextManifest): string {
+  const sorted = [...gcm.intent_weights].sort((a, b) => b.weight - a.weight);
+  return sorted[0].label;
+}
+
+// 🎯 GET INTENT WEIGHTS: Returns raw probability distribution
+export function getIntentWeights(gcm: GlobalContextManifest): { label: string; weight: number }[] {
+  return gcm.intent_weights.map(w => ({ label: w.label, weight: w.weight }));
+}
+
+// 📡 INTENT CHALLENGE LOG: Add a challenge from a challenger agent
+export function addIntentChallenge(
+  gcm: GlobalContextManifest,
+  agent: string,
+  concern: string,
+  recommendation: string
+): GlobalContextManifest {
+  return {
+    ...gcm,
+    intent_challenge_log: [
+      ...gcm.intent_challenge_log,
+      {
+        agent,
+        timestamp: Date.now(),
+        concern,
+        recommendation,
+        resolved: false
+      }
+    ]
+  };
+}
+
+// 🔄 DRIFT-BACK PROTOCOL: Trigger re-evaluation if confidence is low
+export function shouldTriggerDeepResearch(gcm: GlobalContextManifest): boolean {
+  return gcm.confidence_score < 0.7 && gcm.correction.retryCount < gcm.correction.maxRetries;
+}
+
+// 📝 UPDATE PROOF POINTS: Add fresh proof points from research
+export function updateProofPoints(
+  gcm: GlobalContextManifest,
+  newPoints: ProofPointWithRelevance[]
+): GlobalContextManifest {
+  return {
+    ...gcm,
+    proofPoints: newPoints
+  };
+}
+
+// Finalize GCM
 export function finalizeGCM(gcm: GlobalContextManifest): GlobalContextManifest {
   return {
     ...gcm,
