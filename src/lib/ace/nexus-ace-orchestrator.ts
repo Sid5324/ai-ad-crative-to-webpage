@@ -53,6 +53,8 @@ export class NexusACEOrchestrator {
       }
       const imageBuffer = await response.arrayBuffer();
 
+      console.log(`[${this.traceId}] 📥 Downloaded image: ${imageBuffer.byteLength} bytes`);
+
       // Vision LLM call
       const visionPrompt = `
         Analyze this image for landing page content:
@@ -83,9 +85,23 @@ export class NexusACEOrchestrator {
       console.log(`[${this.traceId}] ✅ Vision Analysis: ${result.market_intent} (${result.confidence})`);
 
       return result;
-    } catch (error) {
-      console.error(`[${this.traceId}] ❌ Vision Analysis Failed:`, error);
-      return { market_intent: 'B2C', confidence: 0.3, proof_points: [], colors: ['#1E293B'] };
+
+    } catch (error: any) {
+      console.error(`[${this.traceId}] ❌ Vision Analysis Failed:`, error.message);
+
+      // Check for quota exceeded
+      if (error.message.includes('quota') || error.message.includes('429')) {
+        console.error(`[${this.traceId}] 💰 Gemini API quota exceeded - upgrade to paid plan`);
+        throw new Error('Gemini API quota exceeded. Please upgrade to a paid plan or wait for quota reset.');
+      }
+
+      // Check for model not found
+      if (error.message.includes('not found')) {
+        console.error(`[${this.traceId}] 🤖 Gemini model not available`);
+        throw new Error('Gemini vision model not available. Please check API key permissions.');
+      }
+
+      throw new Error(`Vision analysis failed: ${error.message}`);
     }
   }
 
