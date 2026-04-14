@@ -577,4 +577,4 @@ export const generateProfessionalHTML = (spec: {
   </script>
 </body>
 </html>`;
-};
+};// rebuilt at Tue Apr 14 09:30:56 IST 2026
