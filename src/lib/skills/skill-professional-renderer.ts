@@ -1,6 +1,6 @@
+// ⚠️ REBUILD TRIGGER 2026-04-14 - Full Section Renderer 
+// Includes ALL sections: Hero, Stats, Benefits, How It Works, Safety/Commitment, Testimonials, FAQ, Final CTA, Footer
 // src/lib/skills/skill-professional-renderer.ts - Professional HTML Renderer V2
-// Generates high-quality, branded, professionally structured landing pages
-// Matches examples: uber-select-premium-page.html, merchant-doordash-page.html
 
 export const generateProfessionalHTML = (spec: {
   brandName: string;
