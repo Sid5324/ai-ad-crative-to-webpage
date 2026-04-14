@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     console.log('🧹 Starting blob cleanup...');
 
@@ -61,7 +61,7 @@ export async function DELETE() {
 }
 
 // Also allow GET for testing
-export async function GET() {
+export async function GET(request: Request) {
   return NextResponse.json({
     message: 'Use DELETE method to cleanup blob storage',
     usage: 'curl -X DELETE /api/cleanup'
