@@ -20,22 +20,33 @@ export default function Home() {
   const [step, setStep] = useState<'idle' | 'analyzing' | 'planning' | 'rendering'>('idle');
   const { ref, inView } = useInView({ threshold: 0.1 });
 
-  const handleGenerate = useCallback(async (data: { adInputType: 'image_url' | 'copy'; adInputValue: string; targetUrl: string }) => {
+  const handleGenerate = useCallback(async (data: { adInputType: 'image_url' | 'copy'; adInputValue?: string; adImageUrl?: string; targetUrl: string }) => {
     console.log('🎯 Generate button clicked with:', data);
 
-    if (!data.adInputType || !data.adInputValue?.trim() || !data.targetUrl?.trim()) {
+    // Handle both image and text inputs
+    const inputValue = data.adInputValue || data.adImageUrl || '';
+
+    if (!data.adInputType || !inputValue?.trim() || !data.targetUrl?.trim()) {
       console.error('❌ Validation failed:', {
         adInputType: !!data.adInputType,
-        adInputValue: !!data.adInputValue?.trim(),
-        targetUrl: !!data.targetUrl?.trim()
+        inputValue: !!inputValue?.trim(),
+        targetUrl: !!data.targetUrl?.trim(),
+        data
       });
       return;
     }
 
     console.log('✅ Validation passed, starting generation...');
 
+    // Prepare the data for API call
+    const apiData = {
+      adInputType: data.adInputType,
+      adInputValue: inputValue,
+      targetUrl: data.targetUrl.trim()
+    };
+
     // 🚨 DEBUG: Log what frontend is sending
-    console.log('📤 FRONTEND SENDING:', JSON.stringify(data, null, 2));
+    console.log('📤 FRONTEND SENDING TO API:', JSON.stringify(apiData, null, 2));
 
     setIsGenerating(true);
     setStep('analyzing');
@@ -45,7 +56,7 @@ export default function Home() {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(apiData),
       });
 
       // Handle non-200 responses
