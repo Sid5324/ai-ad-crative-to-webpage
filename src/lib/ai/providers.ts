@@ -8,8 +8,8 @@ export const groqClient = process.env.GROQ_API_KEY
     })
   : null;
 
-export const geminiClient = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+export const geminiClient = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY)
   : null;
 
 export const GROQ_MODELS = [

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   
   const input = {
     targetUrl: body.targetUrl || body.url || '',
-    adInputType: (body.adImageUrl ? 'image_url' : 'copy') as 'image_url' | 'copy',
+    adInputType: body.adInputType as 'image_url' | 'copy',
     adInputValue: body.adImageUrl || body.adInputValue || body.adCopy || ''
   };
   

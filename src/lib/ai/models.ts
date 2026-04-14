@@ -13,3 +13,8 @@ export const useModel = (type: 'analysis' | 'classification' | 'vision' | 'gener
       return process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
   }
 };
+
+// Check if Gemini is available (for vision)
+export const isGeminiAvailable = (): boolean => {
+  return !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+};

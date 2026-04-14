@@ -3,7 +3,7 @@
 // Fixes Context Vanishing, Image Analysis, and Semantic Drift
 
 import { UnifiedGCM, IntentWeight } from './ace-gcm';
-import { useModel } from '../ai/models';
+import { useModel, isGeminiAvailable } from '../ai/models';
 import { groqCall, geminiCall } from '../ai/providers';
 import { generateProfessionalHTMLv2 } from '../skills/skill-v2-renderer';
 
@@ -39,9 +39,18 @@ export class NexusACEOrchestrator {
   private async visionAnalysisSkill(imageUrl: string): Promise<any> {
     console.log(`[${this.traceId}] 👁️ Running Vision Analysis on: ${imageUrl}`);
 
+    // Check if Gemini is available
+    if (!isGeminiAvailable()) {
+      console.error(`[${this.traceId}] ❌ Gemini API not configured - cannot analyze images`);
+      throw new Error('Gemini API key not configured for vision analysis');
+    }
+
     try {
       // Download image
       const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download image: ${response.status}`);
+      }
       const imageBuffer = await response.arrayBuffer();
 
       // Vision LLM call
@@ -127,7 +136,9 @@ export class NexusACEOrchestrator {
           }));
 
         } else {
-          // Text analysis fallback
+          // Vision failed - fallback to text analysis of URL (not ideal but better than nothing)
+          console.log(`[${this.traceId}] ⚠️ Vision failed, falling back to URL text analysis`);
+
           const textIntent = input.adInputValue.toLowerCase();
           const b2bScore = (textIntent.match(/merchant|business|partner|b2b/gi) || []).length;
           const b2cScore = (textIntent.match(/order|buy|consumer|hungry|b2c/gi) || []).length;
@@ -136,7 +147,7 @@ export class NexusACEOrchestrator {
             b2b: b2bScore > b2cScore ? 0.8 : 0.2,
             b2c: b2cScore > b2bScore ? 0.8 : 0.2,
             confidence: Math.max(b2bScore, b2cScore) > 0 ? 0.7 : 0.3,
-            evidence: `Text: B2B(${b2bScore}), B2C(${b2cScore})`
+            evidence: `Fallback: B2B(${b2bScore}), B2C(${b2cScore})`
           };
         }
       });
