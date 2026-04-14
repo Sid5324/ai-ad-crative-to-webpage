@@ -26,9 +26,14 @@ export async function groqCall(model: string, prompt: string, responseFormat?: a
   }
 
   try {
+    // Include "json" in prompt when response_format is json_object (required by Groq API)
+    const promptWithJson = (responseFormat?.type === 'json_object' && !prompt.toLowerCase().includes('json'))
+      ? prompt + '\n\nRespond in JSON format.'
+      : prompt;
+
     const completion = await groqClient.chat.completions.create({
       model,
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content: promptWithJson }],
       temperature: 0.7,
       max_tokens: 2000,
       ...(responseFormat && { response_format: responseFormat })
