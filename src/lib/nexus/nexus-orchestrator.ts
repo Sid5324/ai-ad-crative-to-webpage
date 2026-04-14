@@ -10,6 +10,7 @@ import { RepairAgent, QaValidator, REPAIR_SKILLS, DEFAULT_RETRY_CONFIG } from '.
 import { fixHtml, validateHtml, enforceBrandColors, extractBrandFromUrl, getBrandColors as getBrandColorsFn } from '../skills/skill-brand-enforcer';
 import { validateAndFixHtml, checkHtmlIssues, enforceProperLayout, finalCleanup } from '../skills/skill-html-validator';
 import { generateProfessionalHTML } from '../skills/skill-professional-renderer';
+import { generateProfessionalHTMLv2 } from '../skills/skill-v2-renderer';
 import { generateBrandContext, generateBrandHeadline, generateBrandBenefits, generateBrandStats } from '../skills/skill-brand-context';
 import { buildCopyACEContext, buildHtmlACEContext, buildBrandACEContext, formatACEContext } from '../ace/ace-context';
 
@@ -473,7 +474,7 @@ Return JSON:
         { skill: 'html-generation, tailwind-rendering, brand-color-enforcement, brand-context-integration' },
         async () => {
           // Generate professional HTML with full brand context
-          let htmlContent = generateProfessionalHTML({
+          let htmlContent = generateProfessionalHTMLv2({
             brandName: brandAnalysis.brandName,
             brandColors,
             copy,

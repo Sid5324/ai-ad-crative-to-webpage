@@ -2,7 +2,7 @@
 // Includes ALL sections: Hero, Stats, Benefits, How It Works, Safety/Commitment, Testimonials, FAQ, Final CTA, Footer
 // src/lib/skills/skill-professional-renderer.ts - Professional HTML Renderer V2
 
-export const generateProfessionalHTML = (spec: {
+export const generateProfessionalHTMLv2 = (spec: {
   brandName: string;
   brandColors: { primary: string; accent: string; light: string; dark: string };
   copy: any;
