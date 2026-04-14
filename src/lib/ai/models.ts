@@ -6,7 +6,7 @@ export const useModel = (type: 'analysis' | 'classification' | 'vision' | 'gener
     case 'classification':
       return process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
     case 'vision':
-      return process.env.GEMINI_MODEL || 'gemini-1.5-pro';
+      return process.env.GEMINI_MODEL || 'gemini-pro';
     case 'generation':
       return process.env.GROQ_MODEL || 'llama3-70b-8192';
     default:
