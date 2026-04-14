@@ -9,7 +9,7 @@ export const generateProfessionalHTML = (spec: {
   category: string;
 }): string => {
   // DEBUG: Log to verify this function is being executed
-  console.log('[V2 Renderer] generateProfessionalHTML called, category:', category);
+  console.log('[V2 Renderer] generateProfessionalHTML called, category:', spec.category);
   
   const { brandName, brandColors, copy, category } = spec;
 
