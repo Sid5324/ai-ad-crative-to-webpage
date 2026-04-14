@@ -51,7 +51,7 @@ export async function groqCall(model: string, prompt: string, responseFormat?: a
   }
 }
 
-export async function geminiCall(model: string, prompt: string) {
+export async function geminiCall(model: string, prompt: string, options?: { images?: { data: Buffer }[] }) {
   if (!geminiClient) {
     throw new Error('GEMINI_API_KEY not configured');
   }
@@ -59,7 +59,21 @@ export async function geminiCall(model: string, prompt: string) {
   try {
     const geminiModel = geminiClient.getGenerativeModel({ model });
 
-    const result = await geminiModel.generateContent(prompt);
+    let content: any[] = [{ text: prompt }];
+
+    // Add images if provided
+    if (options?.images) {
+      for (const image of options.images) {
+        content.push({
+          inlineData: {
+            mimeType: 'image/png', // Assume PNG for now
+            data: image.data.toString('base64')
+          }
+        });
+      }
+    }
+
+    const result = await geminiModel.generateContent({ contents: [{ role: 'user', parts: content }] });
     const response = await result.response;
     const text = response.text();
 

@@ -361,3 +361,32 @@ export function finalizeGCM(gcm: GlobalContextManifest): GlobalContextManifest {
     finalized: true
   };
 }
+
+// Unified GCM for Nexus-ACE Integration
+export interface UnifiedGCM {
+  // 🔬 RESEARCH FAMILY (Agents 1-6)
+  intent_vector: { b2b: number; b2c: number; confidence: number; evidence: string };
+  visual_dna: { primary: string; accent: string; logo: string };
+  validated_proof_points: Array<{ value: string; source: string; context: string }>;
+
+  // 🧠 STRATEGY FAMILY (Agents 7-12)
+  page_blueprint: { layout: string; sections: string[]; flow: string };
+  copy_framework: 'PAS' | 'AIDA' | 'BAB' | 'FEATURE_BENEFIT';
+  cta_strategy: { primary: string; secondary: string };
+
+  // 🏭 FACTORY FAMILY (Agents 13-26)
+  design_tokens: Record<string, string>;
+  html_manifest: string;
+
+  // 🛡️ GOVERNANCE FAMILY (Agents 27-30)
+  qa_gate_status: 'CLEARED' | 'BLOCKED' | 'REPAIRING';
+  semantic_drift_score: number;
+  error_logs: string[];
+
+  // 🔄 SELF-CORRECTION
+  retry_count: number;
+  max_retries: number;
+
+  // 📊 TRACEABILITY
+  agent_trace?: any[];
+}

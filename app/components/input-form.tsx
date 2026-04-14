@@ -25,13 +25,23 @@ export default function InputForm({ onGenerate, loading, currentStep }: InputFor
   async function handleImageUpload(file: File): Promise<string | null> {
     setIsUploading(true);
     try {
-      // For now, create a local object URL for the image
-      // TODO: Implement proper image upload to cloud storage
-      const url = URL.createObjectURL(file);
-      return url;
-    } catch (error) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        return data.url;
+      } else {
+        throw new Error(data.error || 'Upload failed');
+      }
+    } catch (error: any) {
       console.error('Upload error:', error);
-      alert('Failed to process image');
+      alert('Failed to upload image: ' + error.message);
       return null;
     } finally {
       setIsUploading(false);

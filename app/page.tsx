@@ -183,24 +183,60 @@ export default function Home() {
                   This is your generated landing page
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(result.html);
-                  alert('HTML code copied to clipboard!');
-                }}
-                style={{
-                  background: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  padding: '10px 20px',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                }}
-              >
-                📋 Copy Code
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(result.html);
+                      alert('HTML code copied to clipboard!');
+                    } catch (err) {
+                      // Fallback for browsers that don't support clipboard API
+                      const textArea = document.createElement('textarea');
+                      textArea.value = result.html;
+                      document.body.appendChild(textArea);
+                      textArea.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(textArea);
+                      alert('HTML code copied to clipboard!');
+                    }
+                  }}
+                  style={{
+                    background: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  📋 Copy Code
+                </button>
+                <button
+                  onClick={() => {
+                    const newWindow = window.open('', '_blank');
+                    if (newWindow) {
+                      newWindow.document.write(result.html);
+                      newWindow.document.close();
+                    } else {
+                      alert('Please allow popups for this site to view the page in a new tab');
+                    }
+                  }}
+                  style={{
+                    background: '#22c55e',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🔗 Open in New Tab
+                </button>
+              </div>
             </div>
             <div style={{
               height: '600px',
@@ -215,6 +251,12 @@ export default function Home() {
                   border: 'none',
                 }}
                 title="Generated Landing Page"
+                onError={(e) => {
+                  console.error('Iframe failed to load:', e);
+                }}
+                onLoad={() => {
+                  console.log('Iframe loaded successfully');
+                }}
               />
             </div>
           </div>

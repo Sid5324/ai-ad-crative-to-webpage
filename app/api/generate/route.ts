@@ -1,10 +1,10 @@
-// app/api/generate/route.ts - ACE Nervous System with GCM
+// app/api/generate/route.ts - Unified Nexus-ACE Nervous System
 import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { ACENexusOrchestrator } from '@/lib/ace/ace-orchestrator';
+import { NexusACEOrchestrator } from '@/lib/ace/nexus-ace-orchestrator';
 
 const PREVIEWS: Record<string, any> = {};
-const aceOrchestrator = new ACENexusOrchestrator();
+const unifiedOrchestrator = new NexusACEOrchestrator();
 
 export async function POST(req: Request) {
   const traceId = Math.random().toString(36).substring(7);
@@ -39,8 +39,8 @@ export async function POST(req: Request) {
     console.log('📋 Input Type:', input.adInputType);
     console.log('🎯 Target URL:', input.targetUrl);
 
-    // Execute ACE Orchestrator with GCM
-    const result = await aceOrchestrator.execute(input);
+    // Execute Unified Nexus-ACE Orchestrator
+    const result = await unifiedOrchestrator.execute(input);
 
     if (!result.success) {
       return NextResponse.json({
@@ -51,15 +51,14 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // Log GCM State - Using CORRECT property names for Elastic Weighting
-    console.log('🧠 GCM State - ELASTIC WEIGHTING:');
-    console.log('   Intent Weights:', result.gcm.intent_weights);
-    console.log('   Confidence Score:', result.gcm.confidence_score);
-    console.log('   Primary Intent:', result.gcm.intent_weights?.sort((a, b) => b.weight - a.weight)[0]?.label);
-    console.log('   Visual DNA:', result.gcm.visualDNA.primaryColor);
-    console.log('   Proof Points:', result.gcm.proofPoints?.map(p => p.value));
-    console.log('   Copy Framework:', result.gcm.copyFramework);
-    console.log('   Brand Name:', result.gcm.visualDNA.logoEmoji);
+    // Log Unified GCM State - Nexus-ACE System
+    console.log(`[${traceId}] 🧠 GCM State - NEXUS-ACE UNIFIED:`);
+    console.log(`[${traceId}]   Intent Vector:`, result.gcm.intent_vector);
+    console.log(`[${traceId}]   Visual DNA:`, result.gcm.visual_dna);
+    console.log(`[${traceId}]   Proof Points:`, result.gcm.validated_proof_points?.map(p => p.value));
+    console.log(`[${traceId}]   Copy Framework:`, result.gcm.copy_framework);
+    console.log(`[${traceId}]   QA Gate:`, result.gcm.qa_gate_status);
+    console.log(`[${traceId}]   Semantic Drift:`, result.gcm.semantic_drift_score);
 
 // Create preview
     const previewId = nanoid(10);
@@ -68,9 +67,9 @@ export async function POST(req: Request) {
       html: result.html
     };
 
-console.log('✅ [${traceId}] ACE Generation Complete');
-  console.log('   [${traceId}] Agents Run:', result.gcm.agentTrace?.length || 0);
-  console.log('   [${traceId}] HTML Length:', result.html?.length || 0);
+    console.log(`✅ [${traceId}] ACE Generation Complete`);
+    console.log(`   [${traceId}] Agents Run:`, result.gcm.agent_trace?.length || 0);
+    console.log(`   [${traceId}] HTML Length:`, result.html?.length || 0);
 
     return NextResponse.json({
       success: true,
@@ -78,8 +77,8 @@ console.log('✅ [${traceId}] ACE Generation Complete');
       previewUrl: `/api/preview?id=${previewId}`,
       html: result.html,
       spec: result.gcm,
-      agentTrace: result.gcm.agentTrace,
-      engine: 'ACE-Nervous-System-v2.0'
+      agentTrace: result.gcm.agent_trace || [],
+      engine: 'Nexus-ACE-Unified-v1.0'
     });
 
   } catch (error: any) {
