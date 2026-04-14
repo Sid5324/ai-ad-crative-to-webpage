@@ -44,7 +44,7 @@ const CATEGORY_PATTERNS: Record<string, { patterns: string[]; keywords: string[]
     evidence: 'Ride-hailing services'
   },
   'luxury_transportation': {
-    patterns: ['limousine', 'limo', 'chauffeur', 'premium-car', 'executive-car', 'black-car', 'aston', 'royal-car'],
+    patterns: ['limousine', 'limo', 'chauffeur', 'premium-car', 'executive-car', 'black-car', 'astar', 'royal-car', 'vip-car'],
     keywords: ['limousine', 'luxury', 'chauffeur', 'premium', 'executive', 'VIP', 'airport'],
     evidence: 'Luxury transportation services'
   },
