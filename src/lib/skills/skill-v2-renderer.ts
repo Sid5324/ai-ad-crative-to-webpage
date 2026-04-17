@@ -7,11 +7,79 @@ export const generateProfessionalHTMLv2 = (spec: {
   brandColors: { primary: string; accent: string; light: string; dark: string };
   copy: any;
   category: string;
+  darkMode?: boolean;  // Visual atmosphere override
+  dtr?: any;  // Design Token Registry for advanced rendering
 }): string => {
   // DEBUG: Log to verify this function is being executed
-  console.log('[V2 Renderer] generateProfessionalHTMLv2 called, category:', spec.category);
-  
-  const { brandName, brandColors, copy, category } = spec;
+  console.log('[V2 Renderer] generateProfessionalHTMLv2 called, category:', spec.category, 'darkMode:', spec.darkMode);
+
+  const { brandName, brandColors, copy, category, darkMode, dtr } = spec;
+
+  // 🎭 PERSONALITY-AWARE CONTENT FILTERING
+  // Extract personality data from DTR if available
+  let personalityData = null;
+  if (dtr && typeof dtr === 'object') {
+    // Try to find personality in DTR (it might be nested)
+    personalityData = (dtr as any).personality || null;
+  }
+
+  // Fallback personality based on category
+  if (!personalityData) {
+    const categoryPersonalities: Record<string, any> = {
+      'food_delivery': {
+        avoidTerms: ['luxury', 'premium', 'technical', 'api', 'exclusive', 'elegant', 'sophisticated']
+      },
+      'fintech': {
+        avoidTerms: ['fast food', 'delivery', 'restaurant', 'cheap', 'budget']
+      },
+      'saas': {
+        avoidTerms: ['food', 'delivery', 'restaurant', 'luxury', 'premium']
+      },
+      'ecommerce': {
+        avoidTerms: ['luxury', 'premium', 'technical', 'api']
+      }
+    };
+    personalityData = categoryPersonalities[category] || { avoidTerms: [] };
+  }
+
+  const avoidTerms = personalityData?.avoidTerms || [];
+
+  // Function to filter forbidden terms from text
+  const filterForbiddenTerms = (text: string): string => {
+    if (!avoidTerms.length) return text;
+
+    let filteredText = text;
+    avoidTerms.forEach(term => {
+      // Replace forbidden terms with appropriate alternatives
+      const termLower = term.toLowerCase();
+      if (termLower === 'luxury' || termLower === 'premium') {
+        filteredText = filteredText.replace(new RegExp(term, 'gi'), category === 'food_delivery' ? 'quality' : 'reliable');
+      } else if (termLower === 'technical' || termLower === 'api') {
+        filteredText = filteredText.replace(new RegExp(term, 'gi'), category === 'food_delivery' ? 'fresh' : 'simple');
+      } else if (termLower === 'exclusive' || termLower === 'elegant') {
+        filteredText = filteredText.replace(new RegExp(term, 'gi'), category === 'food_delivery' ? 'delicious' : 'trusted');
+      } else if (termLower === 'fast food' || termLower === 'delivery') {
+        if (category !== 'food_delivery') {
+          filteredText = filteredText.replace(new RegExp(term, 'gi'), 'services');
+        }
+      } else if (termLower === 'restaurant') {
+        if (category !== 'food_delivery') {
+          filteredText = filteredText.replace(new RegExp(term, 'gi'), 'platform');
+        }
+      }
+    });
+
+    return filteredText;
+  };
+
+  // Helper functions for conditional styling based on avoidTerms
+  const getHighlightClass = () => {
+    return avoidTerms.includes('luxury') ? (isDark ? 'text-yellow-400' : 'text-blue-600') : (isDark ? 'luxury-gold' : 'text-blue-600');
+  };
+
+  const getCardClass = () => {
+    return avoidTerms.includes('luxury') ? (isDark ? 'bg-white/10 backdrop-blur-lg border border-white/20' : 'merchant-card bg-white') : (isDark ? 'luxury-card' : 'merchant-card bg-white');
+  };
 
   // Category-specific configurations
   const categoryConfig: Record<string, any> = {
@@ -22,13 +90,13 @@ export const generateProfessionalHTMLv2 = (spec: {
       navLinks: ['Services', 'Fleet', 'Safety', 'Testimonials', 'FAQ'],
       trustIndicators: [
         { emoji: '🛡️', title: 'Verified Drivers', subtitle: 'Background checked & rated 4.8+' },
-        { emoji: '🚗', title: 'Luxury Vehicles', subtitle: 'Premium sedans & SUVs' },
+        { emoji: '🚗', title: 'Quality Vehicles', subtitle: 'Comfortable sedans & SUVs' },
         { emoji: '📍', title: 'Real-Time Tracking', subtitle: 'Share your ride with loved ones' }
       ],
       howItWorks: [
-        { step: '1', title: 'Download the App', desc: 'Get the app for iOS or Android to access premium services.' },
+        { step: '1', title: 'Download the App', desc: 'Get the app for iOS or Android to access quality services.' },
         { step: '2', title: 'Set Your Location', desc: 'Enter your pickup location and destination.' },
-        { step: '3', title: 'Choose Premium', desc: 'Select premium service from vehicle options.' },
+        { step: '3', title: 'Choose Service', desc: 'Select service from vehicle options.' },
         { step: '4', title: 'Enjoy the Ride', desc: 'Sit back and enjoy professional service.' }
       ],
       safetyFeatures: [
@@ -41,8 +109,8 @@ export const generateProfessionalHTMLv2 = (spec: {
         { name: 'Michael Chen', role: 'CEO', quote: 'Consistency and quality of service is outstanding.' }
       ],
       faqs: [
-        { q: 'How much does premium service cost?', a: 'Prices vary by location and demand. Use the app to see current rates.' },
-        { q: 'How do I book?', a: 'Open the app, select your destination, and choose premium service.' },
+        { q: 'How much does service cost?', a: 'Prices vary by location and demand. Use the app to see current rates.' },
+        { q: 'How do I book?', a: 'Open the app, select your destination, and choose service.' },
         { q: 'Are drivers background checked?', a: 'Yes, all drivers undergo comprehensive background checks.' }
       ]
     },
@@ -91,7 +159,7 @@ export const generateProfessionalHTMLv2 = (spec: {
         { step: '1', title: 'Get Started', desc: 'Sign up or download the app.' },
         { step: '2', title: 'Choose Service', desc: 'Select the service that fits your needs.' },
         { step: '3', title: 'Set Details', desc: 'Enter your requirements.' },
-        { step: '4', title: 'Enjoy', desc: 'Experience premium service.' }
+        { step: '4', title: 'Enjoy', desc: 'Experience quality service.' }
       ],
       safetyFeatures: [
         { title: 'Secure Platform', desc: 'Your data is protected.' },
@@ -111,7 +179,8 @@ export const generateProfessionalHTMLv2 = (spec: {
   };
 
   const config = categoryConfig[category] || categoryConfig['default'];
-  const isDark = config.sectionTheme === 'dark';
+  // VISUAL ATMOSPHERE OVERRIDE: Use spec.darkMode if provided, otherwise fall back to category default
+  const isDark = darkMode === true || config.sectionTheme === 'dark';
   
   // Generate stats based on category
   const generateStats = () => {
@@ -142,7 +211,7 @@ export const generateProfessionalHTMLv2 = (spec: {
     const benefitsMap: Record<string, any[]> = {
       luxury_transportation: [
         { emoji: '⭐', title: 'Top-Rated Drivers', desc: 'Every driver maintains 4.8+ star rating for exceptional service.' },
-        { emoji: '🚗', title: 'Luxury Vehicles', desc: 'Travel in premium sedans, SUVs for maximum comfort.' },
+        { emoji: '🚗', title: 'Quality Vehicles', desc: 'Travel in comfortable sedans, SUVs for maximum comfort.' },
         { emoji: '🤵', title: 'Professional Service', desc: 'White-glove service from uniformed drivers.' },
         { emoji: '🛡️', title: 'Safety First', desc: 'Real-time tracking and 24/7 support.' }
       ],
@@ -212,10 +281,10 @@ export const generateProfessionalHTMLv2 = (spec: {
     }
     
     ${isDark ? `
-    .luxury-gold { color: #d4af37; }
-    .luxury-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-    .premium-cta { background: linear-gradient(135deg, #000, #333); color: white; border: 2px solid #fff; }
-    .premium-cta:hover { background: linear-gradient(135deg, #333, #555); }
+    ${!avoidTerms.includes('luxury') ? '.luxury-gold { color: #d4af37; }' : ''}
+    ${!avoidTerms.includes('luxury') ? '.luxury-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }' : ''}
+    ${!avoidTerms.includes('premium') ? '.premium-cta { background: linear-gradient(135deg, #000, #333); color: white; border: 2px solid #fff; }' : ''}
+    ${!avoidTerms.includes('premium') ? '.premium-cta:hover { background: linear-gradient(135deg, #333, #555); }' : ''}
     ` : `
     .cta-primary { background: ${brandColors.primary}; color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .cta-primary:hover { opacity: 0.9; transform: translateY(-1px); }
@@ -258,7 +327,7 @@ export const generateProfessionalHTMLv2 = (spec: {
       <div class="hidden md:flex space-x-8">
         ${config.navLinks.map(link => `<a href="#${link.toLowerCase()}" class="${isDark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'} transition-colors">${link}</a>`).join('')}
       </div>
-      <button class="${isDark ? 'premium-cta' : 'cta-primary'} px-6 py-2 rounded-lg font-semibold">
+      <button class="${isDark ? (avoidTerms.includes('premium') ? 'cta-primary' : 'premium-cta') : 'cta-primary'} px-6 py-2 rounded-lg font-semibold">
         ${copy.primaryCta || 'Get Started'}
       </button>
     </div>
@@ -276,16 +345,15 @@ export const generateProfessionalHTMLv2 = (spec: {
     <div class="max-w-6xl mx-auto text-center relative z-10">
       <div class="mb-8">
         <div class="inline-block px-6 py-3 ${isDark ? 'bg-black/30' : 'bg-blue-50'} backdrop-blur-lg rounded-full text-sm font-medium mb-6 border ${isDark ? 'border-white/20' : 'border-blue-100'}">
-          <span class="${isDark ? 'luxury-gold' : 'text-blue-600'}">${config.headerTag}</span>
+          <span class="${getHighlightClass()}">${filterForbiddenTerms(config.headerTag)}</span>
         </div>
         
         <h1 class="text-5xl md:text-7xl font-black mb-8 leading-tight ${isDark ? 'text-white' : 'text-gray-900'}">
-          ${copy.headline || brandName}
-          ${isDark ? '<br><span class="luxury-gold">Premium</span>' : ''}
+          ${filterForbiddenTerms(copy.headline || brandName)}
         </h1>
-        
+
         <p class="text-xl md:text-2xl mb-12 max-w-4xl mx-auto ${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed">
-          ${copy.subheadline || `Experience premium services with ${brandName}. Professional, reliable, and tailored to your needs.`}
+          ${filterForbiddenTerms(copy.subheadline || `Experience quality services with ${brandName}. Professional, reliable, and tailored to your needs.`)}
         </p>
       </div>
       
@@ -302,7 +370,7 @@ export const generateProfessionalHTMLv2 = (spec: {
       
       <!-- Hero CTAs -->
       <div class="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-        <button class="${isDark ? 'premium-cta' : 'cta-primary'} text-xl font-bold px-12 py-6 rounded-2xl shadow-2xl">
+        <button class="${isDark ? (avoidTerms.includes('premium') ? 'cta-primary' : 'premium-cta') : 'cta-primary'} text-xl font-bold px-12 py-6 rounded-2xl shadow-2xl">
           ${copy.primaryCta || 'Get Started'}
         </button>
         <button class="${isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-gray-100 hover:bg-gray-200'} ${isDark ? 'text-white' : 'text-gray-900'} font-bold px-12 py-6 rounded-2xl text-xl backdrop-blur-sm border ${isDark ? 'border-white/20' : 'border-gray-200'} transition-all">
@@ -326,7 +394,7 @@ export const generateProfessionalHTMLv2 = (spec: {
       <div class="grid md:grid-cols-3 gap-12 text-center">
         ${stats.map(s => `
         <div>
-          <div class="text-5xl font-black ${isDark ? 'luxury-gold stat-glow' : 'text-gray-900'} mb-4">${s.value}</div>
+          <div class="text-5xl font-black ${isDark ? (avoidTerms.includes('luxury') ? 'text-yellow-400 stat-glow' : 'luxury-gold stat-glow') : 'text-gray-900'} mb-4">${s.value}</div>
           <div class="text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}">${s.label}</div>
           <div class="${isDark ? 'text-gray-400' : 'text-gray-600'}">${s.desc}</div>
         </div>
@@ -340,22 +408,22 @@ export const generateProfessionalHTMLv2 = (spec: {
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-20">
         <h2 class="text-4xl md:text-5xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}">
-          Why Choose <span class="${isDark ? 'luxury-gold' : 'text-blue-600'}">${brandName}</span>
+          Why Choose <span class="${getHighlightClass()}">${brandName}</span>
         </h2>
         <p class="text-xl ${isDark ? 'text-gray-300' : 'text-gray-600'} max-w-3xl mx-auto">
-          Experience the difference with our premium services
+          ${filterForbiddenTerms('Experience the difference with our quality services')}
         </p>
       </div>
       
       <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
         ${benefits.map((b, i) => `
-        <div class="${isDark ? 'luxury-card' : 'merchant-card bg-white'} p-8 rounded-2xl fade-in-up" style="animation-delay: ${i * 0.1}s">
+        <div class="${getCardClass()} p-8 rounded-2xl fade-in-up" style="animation-delay: ${i * 0.1}s">
           <div class="w-16 h-16 ${isDark ? 'bg-yellow-500/20' : 'bg-blue-100'} rounded-2xl flex items-center justify-center mb-6 mx-auto">
             <span class="text-3xl">${b.emoji}</span>
           </div>
-          <h3 class="text-xl font-bold mb-4 text-center ${isDark ? 'text-white' : 'text-gray-900'}">${b.title}</h3>
+          <h3 class="text-xl font-bold mb-4 text-center ${isDark ? 'text-white' : 'text-gray-900'}">${filterForbiddenTerms(b.title)}</h3>
           <p class="${isDark ? 'text-gray-300' : 'text-gray-600'} text-center leading-relaxed">
-            ${b.desc}
+            ${filterForbiddenTerms(b.desc)}
           </p>
         </div>
         `).join('')}
@@ -368,7 +436,7 @@ export const generateProfessionalHTMLv2 = (spec: {
     <div class="max-w-6xl mx-auto">
       <div class="text-center mb-20">
         <h2 class="text-4xl md:text-5xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}">
-          How It <span class="${isDark ? 'luxury-gold' : 'text-blue-600'}">Works</span>
+          How It <span class="${getHighlightClass()}">Works</span>
         </h2>
         <p class="text-xl ${isDark ? 'text-gray-300' : 'text-gray-600'}">
           Four simple steps to get started
@@ -394,7 +462,7 @@ export const generateProfessionalHTMLv2 = (spec: {
     <div class="max-w-6xl mx-auto">
       <div class="text-center mb-16">
         <h2 class="text-4xl md:text-5xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}">
-          Our <span class="${isDark ? 'luxury-gold' : 'text-blue-600'}">Commitment</span> to You
+          Our <span class="${getHighlightClass()}">Commitment</span> to You
         </h2>
         <p class="text-xl ${isDark ? 'text-gray-300' : 'text-gray-600'} max-w-3xl mx-auto">
           Your safety and satisfaction are our top priorities
@@ -419,12 +487,12 @@ export const generateProfessionalHTMLv2 = (spec: {
   <section class="py-24 px-6 ${isDark ? 'bg-gradient-to-r from-black to-gray-900' : 'bg-gray-50'}">
     <div class="max-w-6xl mx-auto text-center">
       <h2 class="text-4xl md:text-5xl font-bold mb-16 ${isDark ? 'text-white' : 'text-gray-900'}">
-        What Our <span class="${isDark ? 'luxury-gold' : 'text-blue-600'}">Customers</span> Say
+        What Our <span class="${getHighlightClass()}">Customers</span> Say
       </h2>
       
       <div class="grid md:grid-cols-2 gap-8">
         ${config.testimonials.map(t => `
-        <div class="${isDark ? 'luxury-card' : 'bg-white'} p-8 rounded-2xl text-left">
+        <div class="${getCardClass()} p-8 rounded-2xl text-left">
           <div class="flex items-center mb-6">
             <div class="flex ${isDark ? 'text-yellow-400' : 'text-yellow-500'}">
               ★★★★★
@@ -454,7 +522,7 @@ export const generateProfessionalHTMLv2 = (spec: {
     <div class="max-w-4xl mx-auto">
       <div class="text-center mb-16">
         <h2 class="text-4xl md:text-5xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}">
-          Frequently <span class="${isDark ? 'luxury-gold' : 'text-blue-600'}">Asked</span> Questions
+          Frequently <span class="${getHighlightClass()}">Asked</span> Questions
         </h2>
         <p class="text-xl ${isDark ? 'text-gray-300' : 'text-gray-600'}">
           Everything you need to know
@@ -463,7 +531,7 @@ export const generateProfessionalHTMLv2 = (spec: {
       
       <div class="space-y-6">
         ${config.faqs.map(f => `
-        <div class="${isDark ? 'luxury-card' : 'bg-white border border-gray-200'} p-6 rounded-xl">
+        <div class="${getCardClass()} p-6 rounded-xl">
           <h3 class="text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}">${f.q}</h3>
           <p class="${isDark ? 'text-gray-300' : 'text-gray-600'}">${f.a}</p>
         </div>
@@ -476,7 +544,7 @@ export const generateProfessionalHTMLv2 = (spec: {
   <section class="hero-gradient py-24 px-6">
     <div class="max-w-4xl mx-auto text-center">
       <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">
-        Ready to Get <span class="luxury-gold">Started</span>?
+        Ready to Get <span class="${avoidTerms.includes('luxury') ? 'text-yellow-400' : 'luxury-gold'}">Started</span>?
       </h2>
       <p class="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
         Join thousands of satisfied customers and experience the difference with ${brandName}.
