@@ -80,7 +80,7 @@ async function handleGeneration(versionedRequest: any, featureContext: any) {
       html: result.html,
       metadata: result.metadata,
       performance: result.performance,
-      engine: `Modern-Ad-Creative-System-v${versionedRequest.version}-prod-v3`,
+      engine: `Modern-Ad-Creative-System-v${versionedRequest.version}-prod-v4`,
       features: result.metadata?.features
     });
 
