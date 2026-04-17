@@ -5,6 +5,10 @@ import { visionCache, brandCache, contentCache } from './cache-manager';
 import { performanceMonitor } from './monitoring';
 import { errorHandler, visionCircuitBreaker, aiApiCircuitBreaker } from './error-handler';
 import { testRunner } from './testing-framework';
+import { rateLimiter } from './rate-limiter';
+import { analyticsEngine } from './analytics';
+import { featureFlagManager } from './feature-flags';
+import { contentOptimizer } from './content-optimizer';
 
 export class ModernAdCreativeOrchestrator {
   private pipeline: AdCreativePipeline;
@@ -21,24 +25,55 @@ export class ModernAdCreativeOrchestrator {
     adInputType: 'image_url' | 'copy';
     adInputValue: string;
     targetUrl: string;
-  }): Promise<{
+  }, context?: { userId?: string; sessionId?: string }): Promise<{
     success: boolean;
     html?: string;
     metadata?: any;
     errors?: string[];
     performance?: any;
   }> {
-    const traceId = Math.random().toString(36).substring(7);
+    const traceId = context?.sessionId || Math.random().toString(36).substring(7);
     const startTime = Date.now();
 
     try {
       console.log(`[${traceId}] 🚀 Starting modern ad creative generation`);
 
-      // Extract brand information
+      // Check rate limits
+      const rateLimitCheck = await rateLimiter.checkLimit('api_generation', new Request('http://localhost'));
+      if (!rateLimitCheck.allowed) {
+        analyticsEngine.recordEvent({
+          type: 'error',
+          sessionId: traceId,
+          data: { error: 'Rate limit exceeded', limit: rateLimitCheck },
+          userId: context?.userId
+        });
+
+        return {
+          success: false,
+          errors: ['Rate limit exceeded. Please try again later.'],
+          performance: { rateLimited: true }
+        };
+      }
+
+      // Record analytics
+      analyticsEngine.recordEvent({
+        type: 'generation',
+        sessionId: traceId,
+        data: { inputType: input.adInputType, targetUrl: input.targetUrl },
+        userId: context?.userId,
+        metadata: { startTime }
+      });
+
+      // Extract brand information (with caching)
       const brandData = await this.extractBrandInfo(input.targetUrl, traceId);
 
       // Get personality from configuration
       const personality = this.getPersonality(brandData.domain, brandData.industry);
+
+      // Check feature flags
+      const advancedCaching = featureFlagManager.isEnabled('advanced_caching', context);
+      const semanticValidation = featureFlagManager.isEnabled('semantic_validation', context);
+      const errorRecovery = featureFlagManager.isEnabled('error_recovery', context);
 
       // Run pipeline with monitoring
       const result = await performanceMonitor.recordOperation(
@@ -46,17 +81,28 @@ export class ModernAdCreativeOrchestrator {
         () => this.pipeline.execute({
           ...input,
           brandData,
-          personality
+          personality,
+          features: { advancedCaching, semanticValidation, errorRecovery }
         }, { traceId })
       );
 
       if (!result.success) {
         console.error(`[${traceId}] ❌ Pipeline failed:`, result.context.errors);
 
-        // Attempt recovery
-        const recoveryResult = await this.attemptRecovery(result.context.errors, input, traceId);
-        if (recoveryResult) {
-          return recoveryResult;
+        // Record error analytics
+        analyticsEngine.recordEvent({
+          type: 'error',
+          sessionId: traceId,
+          data: { stage: 'pipeline', errors: result.context.errors },
+          userId: context?.userId
+        });
+
+        // Attempt recovery if enabled
+        if (errorRecovery) {
+          const recoveryResult = await this.attemptRecovery(result.context.errors, input, traceId);
+          if (recoveryResult) {
+            return recoveryResult;
+          }
         }
 
         return {
@@ -66,38 +112,102 @@ export class ModernAdCreativeOrchestrator {
         };
       }
 
-      // Validate final output
-      const validationResults = await configManager.validate({
-        html: result.data.html,
-        personality,
-        brandColors: personality.visual.colors
-      });
+      let finalHtml = result.data.html;
 
-      const failedValidations = validationResults.filter(v => !v.passed);
-      if (failedValidations.length > 0) {
-        console.warn(`[${traceId}] ⚠️ Validation warnings:`, failedValidations);
+      // Content optimization if enabled
+      if (featureFlagManager.isEnabled('content_optimization', context)) {
+        try {
+          const metrics: any = {
+            engagement: 0.7,
+            conversion: 0.6,
+            readability: 0.8,
+            uniqueness: 0.9,
+            relevance: 0.8,
+            performance: { loadTime: 2000, size: finalHtml.length, lighthouseScore: 85 }
+          };
 
-        // Record validation failures
-        failedValidations.forEach(v => {
-          performanceMonitor.recordValidationFailure(v.ruleId || 'unknown', v.severity || 'warning');
+          const optimizationResult = await contentOptimizer.optimize(finalHtml, metrics, traceId);
+          if (optimizationResult.optimizedContent !== finalHtml) {
+            console.log(`[${traceId}] 🎯 Content optimized with ${optimizationResult.appliedRules.length} rules`);
+            finalHtml = optimizationResult.optimizedContent;
+
+            // Record optimization analytics
+            analyticsEngine.recordEvent({
+              type: 'generation',
+              sessionId: traceId,
+              data: {
+                optimization: {
+                  rulesApplied: optimizationResult.appliedRules,
+                  improvements: optimizationResult.improvements
+                }
+              },
+              userId: context?.userId
+            });
+          }
+        } catch (error) {
+          console.warn(`[${traceId}] Content optimization failed:`, error);
+        }
+      }
+
+      // Validate final output if semantic validation is enabled
+      let validationResults: any[] = [];
+      if (semanticValidation) {
+        validationResults = await configManager.validate({
+          html: finalHtml,
+          personality,
+          brandColors: personality.visual.colors
         });
+
+        const failedValidations = validationResults.filter(v => !v.passed);
+        if (failedValidations.length > 0) {
+          console.warn(`[${traceId}] ⚠️ Validation warnings:`, failedValidations);
+
+          // Record validation failures
+          failedValidations.forEach(v => {
+            performanceMonitor.recordValidationFailure(v.ruleId || 'unknown', v.severity || 'warning');
+          });
+        }
       }
 
       console.log(`[${traceId}] ✅ Generation completed successfully`);
 
+      // Record success analytics
+      analyticsEngine.recordEvent({
+        type: 'generation',
+        sessionId: traceId,
+        data: { success: true, personality: personality.id },
+        userId: context?.userId,
+        metadata: { duration: Date.now() - startTime, success: true }
+      });
+
       return {
         success: true,
-        html: result.data.html,
+        html: finalHtml,
         metadata: {
           personality: personality.id,
           validationResults,
-          traceId
+          traceId,
+          features: {
+            advancedCaching,
+            semanticValidation,
+            errorRecovery,
+            contentOptimization: featureFlagManager.isEnabled('content_optimization', context)
+          }
         },
         performance: this.getPerformanceMetrics(startTime)
       };
 
     } catch (error) {
       console.error(`[${traceId}] 💥 Critical error:`, error);
+
+      // Record error analytics
+      analyticsEngine.recordEvent({
+        type: 'error',
+        sessionId: traceId,
+        data: { error: (error as Error).message, critical: true },
+        userId: context?.userId,
+        metadata: { duration: Date.now() - startTime, success: false }
+      });
 
       // Record error
       performanceMonitor.recordError('orchestrator_failure', error as Error);

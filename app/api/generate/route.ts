@@ -3,19 +3,24 @@ import { NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
 import { modernOrchestrator } from '@/lib/core/modern-orchestrator';
 import { performanceMonitor } from '@/lib/core/monitoring';
+import { withRateLimit } from '@/lib/core/rate-limiter';
+import { withAnalytics } from '@/lib/core/analytics';
+import { withAPIVersioning } from '@/lib/core/api-versioning';
+import { withFeatureFlags } from '@/lib/core/feature-flags';
 
 // Force redeploy test
 const PREVIEWS: Record<string, any> = {};
 
-export async function POST(req: Request) {
-  const traceId = Math.random().toString(36).substring(7);
+// Core generation handler
+async function handleGeneration(versionedRequest: any, featureContext: any) {
+  const traceId = featureContext.sessionId;
   const startTime = Date.now();
 
-  console.log(`🚀 [${traceId}] MODERN AD CREATIVE GENERATION SYSTEM`);
+  console.log(`🚀 [${traceId}] MODERN AD CREATIVE GENERATION SYSTEM v${versionedRequest.version}`);
   console.log(`🚀 [${traceId}] ========================================`);
 
   try {
-    const body = await req.json();
+    const body = await versionedRequest.originalRequest.json();
     console.log(`📥 [${traceId}] RAW BODY:`, JSON.stringify(body).substring(0, 500));
 
     const input = {
@@ -33,12 +38,10 @@ export async function POST(req: Request) {
 
     // Validate input
     if (!input.targetUrl) {
-      performanceMonitor.recordRequest('/api/generate', Date.now() - startTime, false);
       return NextResponse.json({ success: false, error: 'targetUrl required' }, { status: 400 });
     }
 
     if (!input.adInputValue) {
-      performanceMonitor.recordRequest('/api/generate', Date.now() - startTime, false);
       return NextResponse.json({ success: false, error: 'Either adImageUrl or adInputValue required' }, { status: 400 });
     }
 
@@ -46,10 +49,7 @@ export async function POST(req: Request) {
     console.log('🎯 Target URL:', input.targetUrl);
 
     // Execute Modern Orchestrator
-    const result = await modernOrchestrator.generate(input);
-
-    // Record performance metrics
-    performanceMonitor.recordRequest('/api/generate', Date.now() - startTime, result.success);
+    const result = await modernOrchestrator.generate(input, featureContext);
 
     if (!result.success) {
       console.error(`❌ [${traceId}] Generation failed:`, result.errors);
@@ -80,14 +80,12 @@ export async function POST(req: Request) {
       html: result.html,
       metadata: result.metadata,
       performance: result.performance,
-      engine: 'Modern-Ad-Creative-System-v2.0'
+      engine: `Modern-Ad-Creative-System-v${versionedRequest.version}`,
+      features: result.metadata?.features
     });
 
   } catch (error: any) {
     console.error(`💥 [${traceId}] Critical error:`, error?.message || error);
-
-    // Record error
-    performanceMonitor.recordRequest('/api/generate', Date.now() - startTime, false);
 
     return NextResponse.json({
       success: false,
@@ -99,6 +97,15 @@ export async function POST(req: Request) {
     }, { status: 500 });
   }
 }
+
+// Apply all middleware layers
+export const POST = withRateLimit('api_generation',
+  withAnalytics('generation',
+    withAPIVersioning(
+      withFeatureFlags(handleGeneration)
+    )
+  )
+);
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
