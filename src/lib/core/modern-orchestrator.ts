@@ -171,27 +171,53 @@ export class ModernAdCreativeOrchestrator {
         }
       }
 
-      // Validate final output if semantic validation is enabled
-      let validationResults: any[] = [];
-      if (semanticValidation) {
-        validationResults = await configManager.validate({
-          html: finalHtml,
-          personality,
-          brandColors: personality.visual.colors
-        });
+       // Validate final output if semantic validation is enabled
+       let validationResults: any[] = [];
+       if (semanticValidation) {
+         validationResults = await configManager.validate({
+           html: finalHtml,
+           personality,
+           brandColors: personality.visual.colors
+         });
 
-        const failedValidations = validationResults.filter(v => !v.passed);
-        if (failedValidations.length > 0) {
-          console.warn(`[${traceId}] ⚠️ Validation warnings:`, failedValidations);
+         const failedValidations = validationResults.filter(v => !v.passed);
+         if (failedValidations.length > 0) {
+           console.warn(`[${traceId}] ⚠️ Validation warnings:`, failedValidations);
 
-          // Record validation failures
-          failedValidations.forEach(v => {
-            performanceMonitor.recordValidationFailure(v.ruleId || 'unknown', v.severity || 'warning');
-          });
-        }
-      }
+           // Record validation failures
+           failedValidations.forEach(v => {
+             performanceMonitor.recordValidationFailure(v.ruleId || 'unknown', v.severity || 'warning');
+           });
 
-      console.log(`[${traceId}] ✅ Generation completed successfully`);
+           // If semantic drift detected and template neutrality wasn't used, retry with neutral templates
+           const driftValidation = failedValidations.find(v => v.ruleId === 'semantic-drift');
+           if (driftValidation && !templateNeutrality) {
+             console.log(`[${traceId}] 🔄 Semantic drift detected without template neutrality - regenerating with neutral templates`);
+             finalHtml = this.generateNeutralHTML(personality, brandData, {
+               proofPoints: context?.proofPoints,
+               industry: brandData.industry
+             });
+
+             // Re-validate after regeneration
+             const revalidationResults = await configManager.validate({
+               html: finalHtml,
+               personality,
+               brandColors: personality.visual.colors
+             });
+             const reFailedValidations = revalidationResults.filter(v => !v.passed);
+             if (reFailedValidations.length > 0) {
+               console.warn(`[${traceId}] ⚠️ Re-generation still has validation issues:`, reFailedValidations);
+               validationResults = [...validationResults, ...revalidationResults];
+             } else {
+               console.log(`[${traceId}] ✅ Re-generation passed validation`);
+               // Replace validation results with the passing ones
+               validationResults = revalidationResults;
+             }
+           }
+         }
+       }
+
+       console.log(`[${traceId}] ✅ Generation completed successfully`);
 
       // Record success analytics
       analyticsEngine.recordEvent({

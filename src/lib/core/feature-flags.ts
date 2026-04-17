@@ -254,7 +254,7 @@ export class FeatureFlagManager {
       name: 'Template Neutrality',
       description: 'Use neutral templates with semantic slot filling',
       enabled: true,
-      rolloutPercentage: 50, // Gradual rollout
+      rolloutPercentage: 100, // Full rollout - fix semantic drift
       metadata: {
         owner: 'system',
         created: new Date().toISOString(),
