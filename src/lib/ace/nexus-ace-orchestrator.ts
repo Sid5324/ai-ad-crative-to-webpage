@@ -925,10 +925,9 @@ export class NexusACEOrchestrator {
         const driftScore = this.calculateSemanticDrift();
         this.gcm.semantic_drift_score = driftScore;
 
-        // TEMPORARILY DISABLE SEMANTIC DRIFT CHECK
-        // if (driftScore > 1.0) {
-        //   issues.push(`SEMANTIC_DRIFT: Score ${driftScore} exceeds threshold`);
-        // }
+        if (driftScore > 0.95) {
+          issues.push(`SEMANTIC_DRIFT: Score ${driftScore} exceeds threshold`);
+        }
 
         // Check 4: Industry Category Cross-Validation (NEW)
         // Compare generated HTML category with target URL industry
