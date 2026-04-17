@@ -370,7 +370,7 @@ export interface UnifiedGCM {
   validated_proof_points: Array<{ value: string; source: string; context: string }>;
 
   // 🧠 STRATEGY FAMILY (Agents 7-12)
-  page_blueprint: { layout: string; sections: string[]; flow: string };
+  page_blueprint: { layout: string; sections: string[]; flow: string; category: string };
   copy_framework: 'PAS' | 'AIDA' | 'BAB' | 'FEATURE_BENEFIT';
   cta_strategy: { primary: string; secondary: string };
 

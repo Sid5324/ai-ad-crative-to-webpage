@@ -12,12 +12,36 @@ export const geminiClient = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEN
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY)
   : null;
 
+// Vision model fallback chain - ordered by preference
+// Key 2 quota: gemini-2.0-flash = 0, gemini-2.0-flash-lite = 0, others working
+const VISION_MODEL_FALLBACK_CHAIN = [
+  'gemini-2.0-flash',           // Best quality (but may be quota exceeded)
+  'gemini-2.5-flash',           // Alternative high quality
+  'gemini-2.5-flash-lite',      // Most reliable - works on Key 2
+  'gemini-flash-latest'         // Fallback
+];
+
+// Text model fallback chain
+const TEXT_MODEL_FALLBACK_CHAIN = [
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-flash-latest'
+];
+
 export const GROQ_MODELS = [
   process.env.GROQ_MODEL,
   'llama-3.1-8b-instant',
   'llama3-70b-8192',
   'mixtral-8x7b-32768',
 ].filter(Boolean) as string[];
+
+// Get fallback chain based on model type
+export const getModelFallbackChain = (model: string, isVision: boolean = false): string[] => {
+  if (isVision) {
+    return VISION_MODEL_FALLBACK_CHAIN;
+  }
+  return TEXT_MODEL_FALLBACK_CHAIN;
+};
 
 // ========== PRODUCTION CALL FUNCTIONS ==========
 export async function groqCall(model: string, prompt: string, responseFormat?: any) {
@@ -51,41 +75,89 @@ export async function groqCall(model: string, prompt: string, responseFormat?: a
   }
 }
 
-export async function geminiCall(model: string, prompt: string, options?: { images?: { data: Buffer }[] }) {
+export async function geminiCallWithFallback(
+  model: string,
+  prompt: string,
+  options?: { images?: { data: Buffer }[] },
+  isVision: boolean = false
+): Promise<string> {
   if (!geminiClient) {
     throw new Error('GEMINI_API_KEY not configured');
   }
 
-  try {
-    const geminiModel = geminiClient.getGenerativeModel({ model });
+  const fallbackChain = getModelFallbackChain(model, isVision);
+  let lastError: Error | null = null;
 
-    let content: any[] = [{ text: prompt }];
+  for (const modelToTry of fallbackChain) {
+    try {
+      console.log(`[GEMINI] Trying model: ${modelToTry} (fallback chain)`);
 
-    // Add images if provided
-    if (options?.images) {
-      for (const image of options.images) {
-        content.push({
-          inlineData: {
-            mimeType: 'image/png', // Assume PNG for now
-            data: image.data.toString('base64')
-          }
-        });
+      const geminiModel = geminiClient.getGenerativeModel({ model: modelToTry });
+
+      let content: any[] = [{ text: prompt }];
+
+      // Add images if provided
+      if (options?.images) {
+        for (const image of options.images) {
+          content.push({
+            inlineData: {
+              mimeType: 'image/png',
+              data: image.data.toString('base64')
+            }
+          });
+        }
       }
+
+      const result = await geminiModel.generateContent({ contents: [{ role: 'user', parts: content }] });
+      const response = await result.response;
+      const text = response.text();
+
+      if (!text) {
+        throw new Error('No content in GEMINI response');
+      }
+
+      console.log(`[GEMINI] Success with model: ${modelToTry}`);
+      return text;
+
+    } catch (error: any) {
+      const errorMsg = error.message || '';
+
+      // Check if it's a quota error
+      if (errorMsg.includes('429') || errorMsg.includes('quota')) {
+        console.log(`[GEMINI] Model ${modelToTry} quota exceeded, trying next...`);
+        lastError = error;
+        continue; // Try next model in chain
+      }
+
+      // Check if model not found or service unavailable (high demand)
+      if (errorMsg.includes('404') || errorMsg.includes('not found') || errorMsg.includes('503')) {
+        console.log(`[GEMINI] Model ${modelToTry} unavailable (${errorMsg.includes('503') ? 'high demand' : 'not found'}), trying next...`);
+        lastError = error;
+        continue;
+      }
+
+      // Check for JSON parse errors
+      if (errorMsg.includes('Unexpected token') || errorMsg.includes('JSON')) {
+        console.log(`[GEMINI] Model ${modelToTry} returned invalid JSON, trying next...`);
+        lastError = error;
+        continue;
+      }
+
+      // Other error - try next model instead of throwing
+      console.log(`[GEMINI] Model ${modelToTry} failed: ${errorMsg.substring(0, 50)}, trying next...`);
+      lastError = error;
+      continue;
     }
-
-    const result = await geminiModel.generateContent({ contents: [{ role: 'user', parts: content }] });
-    const response = await result.response;
-    const text = response.text();
-
-    if (!text) {
-      throw new Error('No content in GEMINI response');
-    }
-
-    return text;
-  } catch (error: any) {
-    console.error('GEMINI API Error:', error.message);
-    throw new Error(`GEMINI call failed: ${error.message}`);
   }
+
+  // All models in chain failed
+  throw new Error(`All Gemini fallback models failed. Last error: ${lastError?.message}`);
+}
+
+// Legacy function - now uses fallback
+export async function geminiCall(model: string, prompt: string, options?: { images?: { data: Buffer }[] }) {
+  const isVision = !!options?.images;
+  return geminiCallWithFallback(model, prompt, options, isVision);
 }
 
 export const GEMINI_MODELS = [

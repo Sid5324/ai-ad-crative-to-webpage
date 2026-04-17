@@ -129,25 +129,79 @@ async function groqCall(model: string, prompt: string, responseFormat?: any) {
   return JSON.parse(data.choices[0].message.content);
 }
 
-async function geminiCall(model: string, prompt: string) {
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 2000,
-      }
-    })
-  });
+// Vision model fallback chain for production-agent-framework
+const VISION_MODEL_CHAIN = [
+  'gemini-2.0-flash',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-flash-latest'
+];
 
-  if (!response.ok) {
-    throw new Error(`GEMINI API error: ${response.status}`);
+async function geminiCallWithFallback(model: string, prompt: string) {
+  const fallbackChain = VISION_MODEL_CHAIN;
+  let lastError: Error | null = null;
+
+  for (const modelToTry of fallbackChain) {
+    try {
+      console.log(`[GEMINI-AGENT] Trying model: ${modelToTry}`);
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToTry}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2000,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorMsg = await response.text();
+        
+        // Check for quota error
+        if (response.status === 429 || errorMsg.includes('quota')) {
+          console.log(`[GEMINI-AGENT] Model ${modelToTry} quota exceeded, trying next...`);
+          lastError = new Error('Quota exceeded');
+          continue;
+        }
+        
+        throw new Error(`GEMINI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!text) {
+        throw new Error('No content in GEMINI response');
+      }
+
+      console.log(`[GEMINI-AGENT] Success with model: ${modelToTry}`);
+      return text;
+
+    } catch (error: any) {
+      const errorMsg = error.message || '';
+      
+      if (errorMsg.includes('429') || errorMsg.includes('quota')) {
+        console.log(`[GEMINI-AGENT] Model ${modelToTry} quota exceeded, trying next...`);
+        lastError = error;
+        continue;
+      }
+
+      // Other error - try next model
+      console.log(`[GEMINI-AGENT] Error with ${modelToTry}: ${errorMsg.substring(0, 50)}`);
+      lastError = error;
+      continue;
+    }
   }
 
-  const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
+  throw new Error(`All Gemini models failed. Last error: ${lastError?.message}`);
+}
+
+// Legacy function - now uses fallback
+async function geminiCall(model: string, prompt: string) {
+  return geminiCallWithFallback(model, prompt);
 }
 
 // ========== AGENTS ==========

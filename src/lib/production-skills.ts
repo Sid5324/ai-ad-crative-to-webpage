@@ -167,7 +167,8 @@ Return JSON: {
 `;
 
     try {
-      const response = await geminiCall('gemini-2.0-flash-exp', prompt);
+      // Use gemini-2.5-flash-lite (works with Key 2) - fallback chain handles quota
+      const response = await geminiCall('gemini-2.5-flash-lite', prompt);
       const validation = JSON.parse(response);
 
       if (!validation.isResponsive || validation.score < 80) {
