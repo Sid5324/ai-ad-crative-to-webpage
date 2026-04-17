@@ -362,8 +362,8 @@ export const generateProfessionalHTMLv2 = (spec: {
         ${config.trustIndicators.map(t => `
         <div class="flex flex-col items-center">
           <div class="text-3xl mb-2">${t.emoji}</div>
-          <div class="text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}">${t.title}</div>
-          <div class="text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}">${t.subtitle}</div>
+          <div class="text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}">${filterForbiddenTerms(t.title)}</div>
+          <div class="text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}">${filterForbiddenTerms(t.subtitle)}</div>
         </div>
         `).join('')}
       </div>
@@ -382,7 +382,7 @@ export const generateProfessionalHTMLv2 = (spec: {
       <div class="relative mt-8">
         <div class="${isDark ? 'bg-black/30' : 'bg-white/50'} backdrop-blur-sm rounded-2xl p-8 brand-shadow inline-block">
           <div class="text-8xl mb-4">${config.heroEmoji}</div>
-          <div class="text-white font-semibold">${config.headerTag}</div>
+          <div class="text-white font-semibold">${filterForbiddenTerms(config.headerTag)}</div>
         </div>
       </div>
     </div>
@@ -449,8 +449,8 @@ export const generateProfessionalHTMLv2 = (spec: {
           <div class="w-16 h-16 ${isDark ? 'bg-yellow-500' : 'bg-blue-600'} rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold ${isDark ? 'text-black' : 'text-white'}">
             ${h.step}
           </div>
-          <h3 class="text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}">${h.title}</h3>
-          <p class="${isDark ? 'text-gray-300' : 'text-gray-600'}">${h.desc}</p>
+          <h3 class="text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}">${filterForbiddenTerms(h.title)}</h3>
+          <p class="${isDark ? 'text-gray-300' : 'text-gray-600'}">${filterForbiddenTerms(h.desc)}</p>
         </div>
         `).join('')}
       </div>
@@ -475,8 +475,8 @@ export const generateProfessionalHTMLv2 = (spec: {
           <div class="w-20 h-20 ${isDark ? 'bg-yellow-500/20' : 'bg-green-100'} rounded-full flex items-center justify-center mx-auto mb-6">
             <span class="text-3xl">✓</span>
           </div>
-          <h3 class="text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}">${s.title}</h3>
-          <p class="${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed">${s.desc}</p>
+          <h3 class="text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}">${filterForbiddenTerms(s.title)}</h3>
+          <p class="${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed">${filterForbiddenTerms(s.desc)}</p>
         </div>
         `).join('')}
       </div>
@@ -500,15 +500,15 @@ export const generateProfessionalHTMLv2 = (spec: {
             <span class="ml-2 ${isDark ? 'text-gray-400' : 'text-gray-500'}">5.0</span>
           </div>
           <p class="text-lg mb-6 italic ${isDark ? 'text-gray-300' : 'text-gray-700'}">
-            "${t.quote}"
+            "${filterForbiddenTerms(t.quote)}"
           </p>
           <div class="flex items-center">
             <div class="w-10 h-10 ${isDark ? 'bg-yellow-500' : 'bg-blue-600'} rounded-full flex items-center justify-center mr-3">
               <span class="${isDark ? 'text-black' : 'text-white'} font-bold">${t.name.charAt(0)}</span>
             </div>
             <div>
-              <div class="font-semibold ${isDark ? 'text-white' : 'text-gray-900'}">${t.name}</div>
-              <div class="text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}">${t.role}</div>
+              <div class="font-semibold ${isDark ? 'text-white' : 'text-gray-900'}">${filterForbiddenTerms(t.name)}</div>
+              <div class="text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}">${filterForbiddenTerms(t.role)}</div>
             </div>
           </div>
         </div>
@@ -532,8 +532,8 @@ export const generateProfessionalHTMLv2 = (spec: {
       <div class="space-y-6">
         ${config.faqs.map(f => `
         <div class="${getCardClass()} p-6 rounded-xl">
-          <h3 class="text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}">${f.q}</h3>
-          <p class="${isDark ? 'text-gray-300' : 'text-gray-600'}">${f.a}</p>
+          <h3 class="text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}">${filterForbiddenTerms(f.q)}</h3>
+          <p class="${isDark ? 'text-gray-300' : 'text-gray-600'}">${filterForbiddenTerms(f.a)}</p>
         </div>
         `).join('')}
       </div>
