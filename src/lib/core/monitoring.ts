@@ -219,13 +219,33 @@ export class PerformanceMonitor {
     return this.metrics.getMetrics('request_error', since);
   }
 
-  getSlowRequests(thresholdMs: number = 5000): Metric[] {
-    const since = Date.now() - (24 * 60 * 60 * 1000); // Last 24 hours
-    const slowRequests = this.metrics.getMetrics('request_duration', since)
-      .filter(m => m.value > thresholdMs);
-    return slowRequests;
-  }
-}
+   getSlowRequests(thresholdMs: number = 5000): Metric[] {
+     const since = Date.now() - (24 * 60 * 60 * 1000); // Last 24 hours
+     const slowRequests = this.metrics.getMetrics('request_duration', since)
+       .filter(m => m.value > thresholdMs);
+     return slowRequests;
+   }
+
+    async recordOperation<T>(operationName: string, operation: () => Promise<T>): Promise<T> {
+      const startTime = Date.now();
+      try {
+        const result = await operation();
+        const duration = Date.now() - startTime;
+        this.recordRequest(operationName, duration, true);
+        return result;
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        this.recordRequest(operationName, duration, false);
+        throw error;
+      }
+    }
+
+   recordError(error: Error, context?: Record<string, string>): void {
+     this.metrics.increment('error', context);
+     // Also could log to external service
+     console.error(`[Monitoring] Error in ${context?.operation || 'unknown'}:`, error.message);
+   }
+ }
 
 // Global monitoring instance
 export const performanceMonitor = new PerformanceMonitor();

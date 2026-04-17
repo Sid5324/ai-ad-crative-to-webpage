@@ -173,7 +173,7 @@ export class RateLimiter {
 export const rateLimiter = new RateLimiter();
 
 // Middleware function for Next.js API routes
-export async function withRateLimit(
+export function withRateLimit(
   ruleId: string,
   handler: (req: Request, ...args: any[]) => Promise<Response>
 ) {

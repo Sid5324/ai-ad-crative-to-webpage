@@ -7,7 +7,7 @@ import { errorHandler, visionCircuitBreaker, aiApiCircuitBreaker } from './error
 import { testRunner } from './testing-framework';
 import { rateLimiter } from './rate-limiter';
 import { analyticsEngine } from './analytics';
-import { featureFlagManager } from './feature-flags';
+import { featureFlagManager, FeatureContext } from './feature-flags';
 import { contentOptimizer } from './content-optimizer';
 import { semanticSanitizer } from './semantic-sanitizer';
 import { neutralTemplateEngine } from './neutral-templates';
@@ -28,17 +28,17 @@ export class ModernAdCreativeOrchestrator {
     configValidator['semanticSanitizer'] = semanticSanitizer;
   }
 
-  async generate(input: {
-    adInputType: 'image_url' | 'copy';
-    adInputValue: string;
-    targetUrl: string;
-  }, context?: { userId?: string; sessionId?: string }): Promise<{
-    success: boolean;
-    html?: string;
-    metadata?: any;
-    errors?: string[];
-    performance?: any;
-  }> {
+   async generate(input: {
+     adInputType: 'image_url' | 'copy';
+     adInputValue: string;
+     targetUrl: string;
+   }, context?: FeatureContext): Promise<{
+     success: boolean;
+     html?: string;
+     metadata?: any;
+     errors?: string[];
+     performance?: any;
+   }> {
     const traceId = context?.sessionId || Math.random().toString(36).substring(7);
     const startTime = Date.now();
 
@@ -62,14 +62,14 @@ export class ModernAdCreativeOrchestrator {
         };
       }
 
-      // Record analytics
-      analyticsEngine.recordEvent({
-        type: 'generation',
-        sessionId: traceId,
-        data: { inputType: input.adInputType, targetUrl: input.targetUrl },
-        userId: context?.userId,
-        metadata: { startTime }
-      });
+       // Record analytics
+       analyticsEngine.recordEvent({
+         type: 'generation',
+         sessionId: traceId,
+         data: { inputType: input.adInputType, targetUrl: input.targetUrl },
+         userId: context?.userId,
+         metadata: { url: input.targetUrl }
+       });
 
       // Extract brand information (with caching)
       const brandData = await this.extractBrandInfo(input.targetUrl, traceId);
@@ -115,12 +115,12 @@ export class ModernAdCreativeOrchestrator {
 
         return {
           success: false,
-          errors: result.context.errors.map(e => e.message),
+          errors: (result as any).context.errors.map((e: Error) => e.message),
           performance: this.getPerformanceMetrics(startTime)
         };
       }
 
-      let finalHtml = result.data.html;
+       let finalHtml = (result as any).data.html;
 
       // Apply Template Neutrality: Generate HTML using neutral templates
       if (templateNeutrality) {
@@ -280,8 +280,8 @@ export class ModernAdCreativeOrchestrator {
         metadata: { duration: Date.now() - startTime, success: false }
       });
 
-      // Record error
-      performanceMonitor.recordError('orchestrator_failure', error as Error);
+       // Record error
+       performanceMonitor.recordError(error, { operation: 'orchestrator_failure' });
 
       return {
         success: false,

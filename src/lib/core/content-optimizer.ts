@@ -70,12 +70,12 @@ export class ContentOptimizer {
       try {
         console.log(`🎯 Applying optimization rule: ${rule.name}`);
         const newContent = await rule.action(optimizedContent, metrics);
-        const improvement = this.calculateImprovement(content, newContent, metrics);
+         const improvement = this.calculateImprovement(content, newContent, metrics);
 
-        if (improvement > 0) {
-          optimizedContent = newContent;
-          appliedRules.push(rule.id);
-          this.ruleCooldowns.set(rule.id, Date.now());
+         if (Object.values(improvement).some(v => v > 0)) {
+           optimizedContent = newContent;
+           appliedRules.push(rule.id);
+           this.ruleCooldowns.set(rule.id, Date.now());
 
           // Track improvements
           Object.assign(improvements, improvement);
@@ -305,25 +305,30 @@ export class ContentOptimizer {
     });
   }
 
-  getOptimizationHistory(contentId?: string): Array<{
-    contentId: string;
-    improvements: Record<string, number>;
-    appliedRules: string[];
-    timestamp: number;
-  }> {
-    if (contentId) {
-      return this.optimizationHistory
-        .filter(h => h.contentId === contentId)
-        .map(h => ({
-          contentId: h.contentId,
-          improvements: this.calculateImprovement('', '', h.originalMetrics), // Would need original content
-          appliedRules: h.appliedRules,
-          timestamp: h.timestamp
-        }));
-    }
+   getOptimizationHistory(contentId?: string): Array<{
+     contentId: string;
+     improvements: Record<string, number>;
+     appliedRules: string[];
+     timestamp: number;
+   }> {
+     if (contentId) {
+       return this.optimizationHistory
+         .filter(h => h.contentId === contentId)
+         .map(h => ({
+           contentId: h.contentId,
+           improvements: {}, // Original content not stored, cannot compute
+           appliedRules: h.appliedRules,
+           timestamp: h.timestamp
+         }));
+     }
 
-    return this.optimizationHistory.slice(-50); // Last 50 optimizations
-  }
+     return this.optimizationHistory.slice(-50).map(h => ({
+       contentId: h.contentId,
+       improvements: {}, // Original content not stored, cannot compute
+       appliedRules: h.appliedRules,
+       timestamp: h.timestamp
+     }));
+   }
 
   getRuleStats(): Record<string, { applied: number; lastUsed: number; avgImprovement: number }> {
     const stats: Record<string, { applied: number; lastUsed: number; avgImprovement: number }> = {};

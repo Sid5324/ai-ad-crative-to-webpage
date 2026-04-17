@@ -33,6 +33,10 @@ export interface FeatureContext {
   userAgent?: string;
   country?: string;
   custom?: Record<string, any>;
+  // Extended context for generation
+  proofPoints?: Array<{value: string, source: string, context: string}>;
+  industry?: string;
+  brandData?: any;
 }
 
 export class FeatureFlagManager {
@@ -311,20 +315,23 @@ export const featureFlagManager = new FeatureFlagManager();
 export function withFeatureFlags(
   handler: (req: Request, context: FeatureContext, ...args: any[]) => Promise<Response>
 ) {
-  return async (req: Request, ...args: any[]) => {
+  return async (req: any, ...args: any[]) => {
+    // Extract the actual Request if wrapped (e.g., by APIVersioning)
+    const baseReq = req instanceof Request ? req : (req?.originalRequest || req) as Request;
+
     const context: FeatureContext = {
-      userId: req.headers.get('X-User-ID') || undefined,
-      sessionId: req.headers.get('X-Session-ID') || Math.random().toString(36).substring(7),
-      ip: req.headers.get('X-Forwarded-For')?.split(',')[0] || req.headers.get('X-Real-IP') || undefined,
-      userAgent: req.headers.get('User-Agent') || undefined
+      userId: baseReq.headers.get('X-User-ID') || undefined,
+      sessionId: baseReq.headers.get('X-Session-ID') || Math.random().toString(36).substring(7),
+      ip: baseReq.headers.get('X-Forwarded-For')?.split(',')[0] || baseReq.headers.get('X-Real-IP') || undefined,
+      userAgent: baseReq.headers.get('User-Agent') || undefined
     };
 
     // Add feature flags to request headers for downstream use
     const enabledFlags = featureFlagManager.getEnabledFlags(context);
-    const headers = new Headers(req.headers);
+    const headers = new Headers(baseReq.headers);
     headers.set('X-Enabled-Features', enabledFlags.join(','));
 
-    const enhancedReq = new Request(req, { headers });
+    const enhancedReq = new Request(baseReq, { headers });
 
     return handler(enhancedReq, context, ...args);
   };

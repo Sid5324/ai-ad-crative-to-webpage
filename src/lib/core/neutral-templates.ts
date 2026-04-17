@@ -103,8 +103,8 @@ export class NeutralTemplateEngine {
       // Hero Section
       hero_title: this.generateHeroTitle(brandName, personality, industry),
       hero_subtitle: this.generateHeroSubtitle(personality, proofPoints),
-      hero_cta_primary: personality.primaryCta,
-      hero_cta_secondary: personality.secondaryCta,
+      hero_cta_primary: personality.cta.primary,
+      hero_cta_secondary: personality.cta.secondary,
 
       // Trust Indicators
       trust_items: this.generateTrustIndicators(personality, industry),
@@ -135,9 +135,9 @@ export class NeutralTemplateEngine {
 
       // Global
       brand_name: brandName,
-      brand_colors: personality.visual?.colors || {
-        primary: '#1E293B',
-        accent: '#3B82F6',
+      brand_colors: {
+        primary: personality.visual?.colors?.primary || '#1E293B',
+        accent: personality.visual?.colors?.accent || '#3B82F6',
         light: '#FFFFFF',
         dark: '#000000'
       }

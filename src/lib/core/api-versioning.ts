@@ -122,16 +122,15 @@ export class APIVersionManager {
       }
     }
 
-    return new Request(url.toString(), {
-      method: req.method,
-      headers: req.headers,
-      body: body,
-      // Add version header
-      headers: {
-        ...Object.fromEntries(req.headers.entries()),
-        'X-API-Version': 'v2'
-      }
-    });
+     return new Request(url.toString(), {
+       method: req.method,
+       body: body,
+       // Add version header and preserve original headers
+       headers: {
+         ...Object.fromEntries(req.headers.entries()),
+         'X-API-Version': 'v2'
+       }
+     });
   }
 
   getVersionInfo(version?: string): APIVersion | APIVersion[] {
@@ -192,7 +191,7 @@ export class APIVersionManager {
 export const apiVersionManager = new APIVersionManager();
 
 // Middleware for API versioning
-export async function withAPIVersioning(
+export function withAPIVersioning(
   handler: (req: VersionedRequest, ...args: any[]) => Promise<Response>
 ) {
   return async (req: Request, ...args: any[]) => {

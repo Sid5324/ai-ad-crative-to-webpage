@@ -295,7 +295,7 @@ export class AnalyticsEngine {
 export const analyticsEngine = new AnalyticsEngine();
 
 // Analytics middleware
-export async function withAnalytics(
+export function withAnalytics(
   eventType: AnalyticsEvent['type'],
   handler: (req: Request, ...args: any[]) => Promise<Response>
 ) {

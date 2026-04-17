@@ -26,7 +26,7 @@ export class ErrorHandler {
   }
 
   registerRecovery(operation: string, recovery: ErrorRecovery): void {
-    this.recovery.set(operation, recovery);
+    this.recoveries.set(operation, recovery);
   }
 
   async handleError(

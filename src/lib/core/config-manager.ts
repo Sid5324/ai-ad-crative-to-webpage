@@ -6,7 +6,7 @@ export interface ValidationRule {
   enabled: boolean;
   severity: 'error' | 'warning' | 'info';
   condition: (context: any) => boolean;
-  action: (context: any) => ValidationResult;
+  action: (context: any) => Promise<ValidationResult> | ValidationResult;
 }
 
 export interface ValidationResult {
