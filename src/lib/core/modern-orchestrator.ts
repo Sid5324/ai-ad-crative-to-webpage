@@ -9,6 +9,9 @@ import { rateLimiter } from './rate-limiter';
 import { analyticsEngine } from './analytics';
 import { featureFlagManager } from './feature-flags';
 import { contentOptimizer } from './content-optimizer';
+import { semanticSanitizer } from './semantic-sanitizer';
+import { neutralTemplateEngine } from './neutral-templates';
+import { configValidator } from './config-validator';
 
 export class ModernAdCreativeOrchestrator {
   private pipeline: AdCreativePipeline;
@@ -19,6 +22,10 @@ export class ModernAdCreativeOrchestrator {
     // Initialize pipeline with improved stages
     const stages = createAdCreativeStages();
     stages.forEach(stage => this.pipeline.addStage(stage));
+
+    // Initialize config validator with semantic sanitizer
+    (global as any).configValidatorInstance = configValidator;
+    configValidator['semanticSanitizer'] = semanticSanitizer;
   }
 
   async generate(input: {
@@ -74,6 +81,7 @@ export class ModernAdCreativeOrchestrator {
       const advancedCaching = featureFlagManager.isEnabled('advanced_caching', context);
       const semanticValidation = featureFlagManager.isEnabled('semantic_validation', context);
       const errorRecovery = featureFlagManager.isEnabled('error_recovery', context);
+      const templateNeutrality = featureFlagManager.isEnabled('template_neutrality', context);
 
       // Run pipeline with monitoring
       const result = await performanceMonitor.recordOperation(
@@ -113,6 +121,20 @@ export class ModernAdCreativeOrchestrator {
       }
 
       let finalHtml = result.data.html;
+
+      // Apply Template Neutrality: Generate HTML using neutral templates
+      if (templateNeutrality) {
+        console.log(`[${traceId}] 🏗️ Using Template Neutrality - Generating with neutral templates`);
+        finalHtml = this.generateNeutralHTML(personality, brandData, {
+          proofPoints: context?.proofPoints,
+          industry: brandData.industry
+        });
+      } else {
+        // Apply semantic sanitization to existing HTML
+        console.log(`[${traceId}] 🛡️ Applying Template Neutrality - Semantic Sanitization`);
+        semanticSanitizer.updatePersonality(personality);
+        finalHtml = semanticSanitizer.sanitize(finalHtml);
+      }
 
       // Content optimization if enabled
       if (featureFlagManager.isEnabled('content_optimization', context)) {
@@ -418,6 +440,34 @@ export class ModernAdCreativeOrchestrator {
     };
 
     return subs[personality.tone] || 'Professional services tailored to your needs';
+  }
+
+  private generateNeutralHTML(personality: BrandPersonality, brandData: any, context: any): string {
+    try {
+      console.log(`Generating neutral template for ${brandData.name}`);
+
+      // Generate content slots using personality-aware logic
+      const slots = neutralTemplateEngine.generateSlots(personality, brandData.name, {
+        industry: brandData.industry,
+        proofPoints: context?.proofPoints || []
+      });
+
+      // Update semantic sanitizer with personality
+      semanticSanitizer.updatePersonality(personality);
+
+      // Validate and sanitize all content
+      const validation = configValidator.validateConfigTree(slots, personality);
+      if (!validation.valid) {
+        console.warn('Config validation found issues:', validation.violations);
+      }
+
+      // Render template with sanitized slots
+      return neutralTemplateEngine.render('landing-page', validation.sanitizedConfig);
+
+    } catch (error) {
+      console.error('Neutral template generation failed, falling back to basic HTML:', error);
+      return this.generateBasicHTML(context, personality);
+    }
   }
 
   private generateFallbackHTML(copy: any, personality: any, brandData: any): string {

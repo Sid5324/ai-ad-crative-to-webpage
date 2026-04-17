@@ -248,6 +248,20 @@ export class FeatureFlagManager {
       }
     });
 
+    // Template neutrality feature flag
+    this.addFlag({
+      key: 'template_neutrality',
+      name: 'Template Neutrality',
+      description: 'Use neutral templates with semantic slot filling',
+      enabled: true,
+      rolloutPercentage: 50, // Gradual rollout
+      metadata: {
+        owner: 'system',
+        created: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+      }
+    });
+
     // Analytics feature flag
     this.addFlag({
       key: 'analytics',
