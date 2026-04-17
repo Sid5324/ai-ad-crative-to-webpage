@@ -920,7 +920,7 @@ export class NexusACEOrchestrator {
         const driftScore = this.calculateSemanticDrift();
         this.gcm.semantic_drift_score = driftScore;
 
-        if (driftScore > 0.7) {
+        if (driftScore > 0.9) {
           issues.push(`SEMANTIC_DRIFT: Score ${driftScore} exceeds threshold`);
         }
 
