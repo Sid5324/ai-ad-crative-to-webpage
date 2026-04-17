@@ -146,7 +146,7 @@ export const generateProfessionalHTMLv2 = (spec: {
       ]
     },
     'default': {
-      headerTag: 'Premium Service',
+      headerTag: 'Quality Service',
       heroEmoji: '⭐',
       sectionTheme: 'light',
       navLinks: ['Features', 'Benefits', 'About', 'Contact'],
@@ -222,7 +222,7 @@ export const generateProfessionalHTMLv2 = (spec: {
         { emoji: '🛟', title: 'Contactless Delivery', desc: 'Safe, hygienic delivery options.' }
       ],
       default: [
-        { emoji: '✓', title: 'Premium Quality', desc: 'Experience excellence in every interaction.' },
+        { emoji: '✓', title: 'Quality Service', desc: 'Experience excellence in every interaction.' },
         { emoji: '🚀', title: 'Personalized Solutions', desc: 'Services tailored to your needs.' },
         { emoji: '💎', title: 'Reliable & Trustworthy', desc: 'Dependable service you can count on.' },
         { emoji: '📈', title: 'Innovation & Excellence', desc: 'Cutting-edge solutions.' }
@@ -239,7 +239,7 @@ export const generateProfessionalHTMLv2 = (spec: {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="${copy.subheadline || `Experience ${brandName} - Premium Services`}">
+  <meta name="description" content="${filterForbiddenTerms(copy.subheadline || `Experience ${brandName} - Quality Services`)}">
   <title>${copy.headline ? copy.headline.replace(/\|brandName\|/g, brandName) : brandName}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -548,7 +548,7 @@ export const generateProfessionalHTMLv2 = (spec: {
       </h2>
       <p class="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
         Join thousands of satisfied customers and experience the difference with ${brandName}.
-        Premium service, proven results, and dedicated support.
+        ${filterForbiddenTerms('Quality service, proven results, and dedicated support.')}
       </p>
       
       <div class="flex flex-col sm:flex-row gap-6 justify-center">
@@ -568,7 +568,7 @@ export const generateProfessionalHTMLv2 = (spec: {
       <div class="grid md:grid-cols-4 gap-8 mb-12">
         <div>
           <div class="text-2xl font-bold mb-4">${brandName}</div>
-          <p class="${isDark ? 'text-gray-400' : 'text-gray-400'}">Premium services you can trust.</p>
+          <p class="${isDark ? 'text-gray-400' : 'text-gray-400'}">${filterForbiddenTerms('Quality services you can trust.')}</p>
         </div>
         <div>
           <h4 class="font-semibold mb-4">Services</h4>
