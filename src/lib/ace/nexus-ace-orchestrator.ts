@@ -655,7 +655,12 @@ export class NexusACEOrchestrator {
             source: 'vision_analysis',
             context: visionResult.text_content
           }));
-          this.gcm.visual_dna = this.ice.getVisual().colors;
+          // Update GCM visual_dna to match DTR colors used in HTML generation
+          this.gcm.visual_dna = {
+            primary: dtr.brand_dna.palette.accent,
+            accent: dtr.brand_dna.palette.surface_elevated,
+            logo: '⭐'
+          };
 
           console.log(`[${this.traceId}] ✅ ICE Updated - Industry: ${industry}, Personality: ${personality.tone}`);
 
