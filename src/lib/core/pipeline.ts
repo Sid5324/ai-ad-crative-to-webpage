@@ -150,16 +150,23 @@ export const createAdCreativeStages = (): PipelineStage<any, any>[] => [
       try {
         const extractedBrand: ExtractedBrand = await extractBrandFromUrl(input.targetUrl);
         const industry = categoryToIndustry(extractedBrand.category || '');
-        // Merge extracted brand with existing brandData, overriding with richer data
-        const enrichedBrandData = {
-          ...input.brandData,
-          name: extractedBrand.name,
-          category: extractedBrand.category,
-          colors: extractedBrand.colors || input.brandData?.colors,
-          confidence: extractedBrand.confidence,
-          industry
-        };
-        return { ...input, brandData: enrichedBrandData };
+
+        // Only override brandData if extraction is confident AND yields a specific industry
+        // Otherwise keep orchestrator's fallback which has proper domain-based mapping
+        if (extractedBrand.confidence > 0.4 && industry !== 'generic') {
+          const enrichedBrandData = {
+            ...input.brandData,
+            name: extractedBrand.name,
+            category: extractedBrand.category,
+            colors: extractedBrand.colors || input.brandData?.colors,
+            confidence: extractedBrand.confidence,
+            industry
+          };
+          return { ...input, brandData: enrichedBrandData };
+        } else {
+          context.warnings.push(`Brand extraction low confidence (${extractedBrand.confidence}) or generic industry (${industry}), preserving orchestrator brandData`);
+          return input;
+        }
       } catch (error: any) {
         context.warnings.push(`Brand extraction failed: ${error.message}`);
         return input;
