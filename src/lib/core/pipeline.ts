@@ -1,6 +1,7 @@
 // src/lib/core/pipeline.ts - Modern Pipeline Architecture
 import { analyzeImageWithFallback } from '../skills/skill-vision-fix';
-import { extractBrandFromUrl, Brand as ExtractedBrand } from '../skills/skill-brand-normalizer';
+import { extractBrandFromUrl } from '../skills/skill-brand-normalizer';
+import { Brand as ExtractedBrand } from '../schemas/skill-schemas';
 import { neutralTemplateEngine } from './neutral-templates';
 import { semanticSanitizer } from './semantic-sanitizer';
 import { configValidator } from './config-validator';
