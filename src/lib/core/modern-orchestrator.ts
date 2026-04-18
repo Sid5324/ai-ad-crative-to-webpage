@@ -303,26 +303,34 @@ export class ModernAdCreativeOrchestrator {
 
     performanceMonitor.recordCacheMiss('brand');
 
-    // Try real brand extraction first
-    try {
-      const { extractBrandFromUrl } = await import('../skills/skill-brand-normalizer');
-      const extractedBrand = await extractBrandFromUrl(targetUrl);
-      
+     // Try real brand extraction first
+     try {
+       const { extractBrandFromUrl } = await import('../skills/skill-brand-normalizer');
+       const extractedBrand = await extractBrandFromUrl(targetUrl);
+       
        if (extractedBrand && extractedBrand.confidence > 0.3) {
-          brandData = {
-            domain,
-            name: extractedBrand.name,
-            industry: extractedBrand.category,
-            colors: extractedBrand.colors || this.getDefaultColors(domain.split('.')[0]),
-            confidence: extractedBrand.confidence,
-            category: extractedBrand.category
-          };
-        
-        console.log(`[${traceId}] ✅ Brand extraction successful: ${brandData.name}`);
-      } else {
-        throw new Error('Low confidence brand extraction');
-      }
-    } catch (error) {
+         // If the extraction returned a generic fallback category (e.g., "Business"),
+         // ignore it and use domain-based mapping instead.
+         const isGenericCategory = extractedBrand.category === 'Business' || extractedBrand.category === 'business';
+         
+         if (isGenericCategory) {
+           throw new Error('Generic brand extraction, using domain fallback');
+         }
+         
+         brandData = {
+           domain,
+           name: extractedBrand.name,
+           industry: extractedBrand.category,
+           colors: extractedBrand.colors || this.getDefaultColors(domain.split('.')[0]),
+           confidence: extractedBrand.confidence,
+           category: extractedBrand.category
+         };
+         
+         console.log(`[${traceId}] ✅ Brand extraction successful: ${brandData.name}`);
+       } else {
+         throw new Error('Low confidence brand extraction');
+       }
+     } catch (error) {
       console.log(`[${traceId}] ⚠️ Brand extraction failed, using fallback:`, error.message);
       
       // Smart fallback - proper capitalization instead of raw domain
