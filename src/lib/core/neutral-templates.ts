@@ -473,27 +473,32 @@ export class NeutralTemplateEngine {
     return templates[personality.tone] || 'Professional services tailored to your needs';
   }
 
-  private generateTrustIndicators(personality: BrandPersonality, industry: string): Array<{emoji: string, title: string, subtitle: string}> {
-    const indicators = {
-      'food_delivery': [
-        { emoji: '⚡', title: 'Fast Delivery', subtitle: 'Hot food in under 30 minutes' },
-        { emoji: '🍽️', title: 'Wide Selection', subtitle: 'Thousands of restaurants' },
-        { emoji: '📍', title: 'Live Tracking', subtitle: 'Track your order in real-time' }
-      ],
-      'fintech': [
-        { emoji: '🔒', title: 'Bank-Level Security', subtitle: 'Your data is fully protected' },
-        { emoji: '⚡', title: 'Instant Processing', subtitle: 'Fast and efficient transactions' },
-        { emoji: '📱', title: 'Mobile Banking', subtitle: 'Manage your finances anywhere' }
-      ],
-      'default': [
-        { emoji: '✓', title: 'Quality Service', subtitle: 'Professional and reliable' },
-        { emoji: '⭐', title: 'Top Rated', subtitle: 'Highly rated by customers' },
-        { emoji: '📞', title: '24/7 Support', subtitle: 'Always here to help' }
-      ]
-    };
+   private generateTrustIndicators(personality: BrandPersonality, industry: string): Array<{emoji: string, title: string, subtitle: string}> {
+     const indicators = {
+       'food_delivery': [
+         { emoji: '⚡', title: 'Fast Delivery', subtitle: 'Hot food in under 30 minutes' },
+         { emoji: '🍽️', title: 'Wide Selection', subtitle: 'Thousands of restaurants' },
+         { emoji: '📍', title: 'Live Tracking', subtitle: 'Track your order in real-time' }
+       ],
+       'fintech': [
+         { emoji: '🔒', title: 'Bank-Level Security', subtitle: 'Your data is fully protected' },
+         { emoji: '⚡', title: 'Instant Processing', subtitle: 'Fast and efficient transactions' },
+         { emoji: '📱', title: 'Mobile Banking', subtitle: 'Manage your finances anywhere' }
+       ],
+       'transportation': [
+         { emoji: '🚗', title: 'Quick Pickups', subtitle: 'Your ride arrives in minutes' },
+         { emoji: '📍', title: 'Live Route Tracking', subtitle: 'Watch your driver en route' },
+         { emoji: '🛡️', title: 'Safe & Secure', subtitle: 'Verified drivers and safety features' }
+       ],
+       'default': [
+         { emoji: '✓', title: 'Quality Service', subtitle: 'Professional and reliable' },
+         { emoji: '⭐', title: 'Top Rated', subtitle: 'Highly rated by customers' },
+         { emoji: '📞', title: '24/7 Support', subtitle: 'Always here to help' }
+       ]
+     };
 
-    return indicators[industry] || indicators['default'];
-  }
+     return indicators[industry] || indicators['default'];
+   }
 
   private generateBenefitsSubtitle(personality: BrandPersonality): string {
     const subtitles = {
@@ -505,23 +510,29 @@ export class NeutralTemplateEngine {
     return subtitles[personality.tone] || 'Experience the difference with our professional services';
   }
 
-  private generateBenefits(personality: BrandPersonality, industry: string): Array<{emoji: string, title: string, description: string}> {
-    const industryBenefits = {
-      'food_delivery': [
-        { emoji: '⚡', title: 'Lightning-Fast Delivery', description: 'Hot, fresh food delivered in under 30 minutes' },
-        { emoji: '🍽️', title: 'Diverse Selection', description: 'Thousands of restaurants and cuisines to choose from' },
-        { emoji: '📍', title: 'Live Tracking', description: 'Track your order from restaurant to doorstep' },
-        { emoji: '🛡️', title: 'Contactless Delivery', description: 'Safe, hygienic delivery options available' }
-      ],
-      'fintech': [
-        { emoji: '🔒', title: 'Advanced Security', description: 'Bank-level encryption and fraud protection' },
-        { emoji: '⚡', title: 'Instant Transactions', description: 'Fast, secure money transfers and payments' },
-        { emoji: '📊', title: 'Financial Insights', description: 'Track spending and manage your finances better' },
-        { emoji: '🎯', title: 'Personalized Offers', description: 'Tailored financial products for your needs' }
-      ]
-    };
+   private generateBenefits(personality: BrandPersonality, industry: string): Array<{emoji: string, title: string, description: string}> {
+     const industryBenefits = {
+       'food_delivery': [
+         { emoji: '⚡', title: 'Lightning-Fast Delivery', description: 'Hot, fresh food delivered in under 30 minutes' },
+         { emoji: '🍽️', title: 'Diverse Selection', description: 'Thousands of restaurants and cuisines to choose from' },
+         { emoji: '📍', title: 'Live Tracking', description: 'Track your order from restaurant to doorstep' },
+         { emoji: '🛡️', title: 'Contactless Delivery', description: 'Safe, hygienic delivery options available' }
+       ],
+       'fintech': [
+         { emoji: '🔒', title: 'Advanced Security', description: 'Bank-level encryption and fraud protection' },
+         { emoji: '⚡', title: 'Instant Transactions', description: 'Fast, secure money transfers and payments' },
+         { emoji: '📊', title: 'Financial Insights', description: 'Track spending and manage your finances better' },
+         { emoji: '🎯', title: 'Personalized Offers', description: 'Tailored financial products for your needs' }
+       ],
+       'transportation': [
+         { emoji: '🚗', title: 'Quick Pickups', description: 'Your ride arrives in minutes' },
+         { emoji: '📍', title: 'Live Route Tracking', description: 'Watch your driver en route' },
+         { emoji: '🛡️', title: 'Safe & Secure', description: 'Verified drivers and safety features' },
+         { emoji: '💰', title: 'Upfront Pricing', description: 'Know the cost before you ride' }
+       ]
+     };
 
-    if (industryBenefits[industry]) return industryBenefits[industry];
+     if (industryBenefits[industry]) return industryBenefits[industry];
 
     // Default benefits based on personality
     return [
@@ -532,15 +543,21 @@ export class NeutralTemplateEngine {
     ];
   }
 
-  private generateHowItWorksSteps(personality: BrandPersonality, industry: string): Array<{number: string, title: string, description: string}> {
-    const industrySteps = {
-      'food_delivery': [
-        { number: '1', title: 'Browse Restaurants', description: 'Explore local restaurants and menus near you' },
-        { number: '2', title: 'Place Your Order', description: 'Add items to cart and customize your order' },
-        { number: '3', title: 'Track Delivery', description: 'Watch your order arrive in real-time' },
-        { number: '4', title: 'Enjoy Your Meal', description: 'Hot, fresh food delivered to your door' }
-      ]
-    };
+   private generateHowItWorksSteps(personality: BrandPersonality, industry: string): Array<{number: string, title: string, description: string}> {
+     const industrySteps = {
+       'food_delivery': [
+         { number: '1', title: 'Browse Restaurants', description: 'Explore local restaurants and menus near you' },
+         { number: '2', title: 'Place Your Order', description: 'Add items to cart and customize your order' },
+         { number: '3', title: 'Track Delivery', description: 'Watch your order arrive in real-time' },
+         { number: '4', title: 'Enjoy Your Meal', description: 'Hot, fresh food delivered to your door' }
+       ],
+       'transportation': [
+         { number: '1', title: 'Set Pickup', description: 'Enter your location and destination' },
+         { number: '2', title: 'Choose Ride', description: 'Select vehicle type that fits your needs' },
+         { number: '3', title: 'Track Driver', description: 'See your driver\'s ETA and route' },
+         { number: '4', title: 'Arrive Safely', description: 'Reach your destination and pay seamlessly' }
+       ]
+     };
 
     if (industrySteps[industry]) return industrySteps[industry];
 
