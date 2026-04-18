@@ -1,8 +1,6 @@
 // src/lib/skills/skill-ad-vision.ts - Ad Vision Analysis Skill
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AdVision } from '../schemas/skill-schemas';
-
-const genai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || '');
+import { geminiCall } from '../ai/providers';
 
 // Analyze ad image or text input
 export async function runAdVisionSkill(
@@ -32,21 +30,18 @@ export async function runAdVisionSkill(
 
 async function analyzeImage(imageUrl: string): Promise<AdVision> {
   console.log('[AdVision] Running Gemini Vision...');
-  
-  const model = genai.getGenerativeModel({ model: 'gemini-1.5-flash' });
-  
-  const imageRes = await fetch(imageUrl, { 
-    signal: AbortSignal.timeout(15000) 
+
+  const imageRes = await fetch(imageUrl, {
+    signal: AbortSignal.timeout(15000)
   });
-  
+
   if (!imageRes.ok) {
     throw new Error(`Image fetch failed: ${imageRes.status}`);
   }
-  
+
   const buffer = await imageRes.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString('base64');
   const mime = imageRes.headers.get('content-type') || 'image/jpeg';
-  
+
   const prompt = `Analyze this ad image. Return JSON with exact fields:
 {
   "status": "ok",
@@ -61,14 +56,12 @@ async function analyzeImage(imageUrl: string): Promise<AdVision> {
 
 Focus on: offer, CTA, target audience, emotional appeal.`;
 
-  const result = await model.generateContent([
-    { inlineData: { mimeType: mime, data: base64 } },
-    prompt
-  ]);
-  
-  const text = result.response.text();
+  const text = await geminiCall('gemini-2.0-flash', prompt, {
+    images: [{ data: Buffer.from(buffer), mimeType: mime }]
+  });
+
   const cleaned = text.replace(/```json|```/g, '').trim();
-  
+
   try {
     const parsed = JSON.parse(cleaned);
     return {

@@ -78,7 +78,7 @@ export async function groqCall(model: string, prompt: string, responseFormat?: a
 export async function geminiCallWithFallback(
   model: string,
   prompt: string,
-  options?: { images?: { data: Buffer }[] },
+  options?: { images?: { data: Buffer; mimeType?: string }[] },
   isVision: boolean = false
 ): Promise<string> {
   if (!geminiClient) {
@@ -96,17 +96,17 @@ export async function geminiCallWithFallback(
 
       let content: any[] = [{ text: prompt }];
 
-      // Add images if provided
-      if (options?.images) {
-        for (const image of options.images) {
-          content.push({
-            inlineData: {
-              mimeType: 'image/png',
-              data: image.data.toString('base64')
-            }
-          });
-        }
-      }
+       // Add images if provided
+       if (options?.images) {
+         for (const image of options.images) {
+           content.push({
+             inlineData: {
+               mimeType: image.mimeType || 'image/png',
+               data: image.data.toString('base64')
+             }
+           });
+         }
+       }
 
       const result = await geminiModel.generateContent({ contents: [{ role: 'user', parts: content }] });
       const response = await result.response;
@@ -155,7 +155,7 @@ export async function geminiCallWithFallback(
 }
 
 // Legacy function - now uses fallback
-export async function geminiCall(model: string, prompt: string, options?: { images?: { data: Buffer }[] }) {
+export async function geminiCall(model: string, prompt: string, options?: { images?: { data: Buffer; mimeType?: string }[] }) {
   const isVision = !!options?.images;
   return geminiCallWithFallback(model, prompt, options, isVision);
 }
