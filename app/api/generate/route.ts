@@ -1,44 +1,33 @@
-// app/api/generate/route.ts - Modern Ad Creative Generation System
+// app/api/generate/route.ts - Simplified for testing
 import { NextResponse } from 'next/server';
-import { modernOrchestrator } from '@/lib/core/modern-orchestrator';
-import { performanceMonitor } from '@/lib/core/monitoring';
-import { withRateLimit } from '@/lib/core/rate-limiter';
-import { withAnalytics } from '@/lib/core/analytics';
-import { withAPIVersioning } from '@/lib/core/api-versioning';
-import { withFeatureFlags } from '@/lib/core/feature-flags';
 
 // Force redeploy test
 const PREVIEWS: Record<string, any> = {};
 
-// Core generation handler
-async function handleGeneration(req: Request, featureContext: any) {
-  const traceId = featureContext.sessionId;
-  const startTime = Date.now();
-
-  console.log(`🚀 [${traceId}] MODERN AD CREATIVE GENERATION SYSTEM`);
-  console.log(`🚀 [${traceId}] ========================================`);
-
-     try {
-       const body = await req.json();
-       console.log(`📥 [${traceId}] RAW BODY:`, JSON.stringify(body).substring(0, 500));
-
-       const input = {
-         targetUrl: body.targetUrl || body.url || '',
-         adInputType: body.adInputType as 'image_url' | 'copy',
-         adInputValue: body.adImageUrl || body.adInputValue || body.adCopy || ''
-       };
-
-    console.log(`🔧 [${traceId}] CONSTRUCTED INPUT:`, {
-      targetUrl: input.targetUrl,
-      adInputType: input.adInputType,
-      adInputValue: input.adInputValue ? input.adInputValue.substring(0, 100) + '...' : '(empty)',
-      adInputValueLength: input.adInputValue?.length
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    return NextResponse.json({
+      success: true,
+      message: 'API reachable',
+      received: body
     });
+  } catch (error: any) {
+    return NextResponse.json({
+      success: false,
+      error: error?.message || 'Invalid request'
+    }, { status: 400 });
+  }
+}
 
-    // Validate input
-    if (!input.targetUrl) {
-      return NextResponse.json({ success: false, error: 'targetUrl required' }, { status: 400 });
-    }
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id');
+  if (!id || !PREVIEWS[id]) {
+    return NextResponse.json({ error: 'Preview expired' }, { status: 404 });
+  }
+  return NextResponse.json(PREVIEWS[id]);
+}
 
     if (!input.adInputValue) {
       return NextResponse.json({ success: false, error: 'Either adImageUrl or adInputValue required' }, { status: 400 });
