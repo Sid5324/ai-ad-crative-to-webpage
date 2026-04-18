@@ -245,17 +245,17 @@ export class NeutralTemplateEngine {
       result = result.replace('{{testimonials_grid}}', testimonialsHtml);
     }
 
-    // Stats
-    if (slots.stats_items) {
-      const statsHtml = slots.stats_items.map(stat => `
-        <div class="text-center">
-          <div class="text-5xl font-black text-gray-900 mb-4">${stat.value}</div>
-          <div class="text-xl font-semibold mb-2 text-gray-900">${stat.label}</div>
-          <div class="text-gray-600">${stat.description}</div>
-        </div>
-      `).join('');
-      result = result.replace('{{stats_grid}}', statsHtml);
-    }
+     // Stats
+     if (slots.stats_items) {
+       const statsHtml = slots.stats_items.map(stat => `
+         <div class="text-center">
+           <div class="text-5xl font-black text-white mb-4">${stat.value}</div>
+           <div class="text-xl font-semibold mb-2 text-white">${stat.label}</div>
+           <div class="text-gray-300">${stat.description}</div>
+         </div>
+       `).join('');
+       result = result.replace('{{stats_grid}}', statsHtml);
+     }
 
     // FAQ
     if (slots.faq_items) {
