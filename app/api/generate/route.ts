@@ -97,14 +97,22 @@ async function handleGeneration(req: Request, featureContext: any) {
   }
 }
 
-// Apply all middleware layers
-export const POST = withRateLimit('api_generation',
-  withAnalytics('generation',
-    withAPIVersioning(
-      withFeatureFlags(handleGeneration)
-    )
-  )
-);
+// Simple test version - no middleware
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    return NextResponse.json({
+      success: true,
+      message: 'API reachable',
+      received: body
+    });
+  } catch (error: any) {
+    return NextResponse.json({
+      success: false,
+      error: error?.message || 'Invalid request'
+    }, { status: 400 });
+  }
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
