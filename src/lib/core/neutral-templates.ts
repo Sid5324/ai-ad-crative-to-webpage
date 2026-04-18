@@ -144,28 +144,38 @@ export class NeutralTemplateEngine {
     };
   }
 
-  // Render template with filled slots
-  render(templateName: string, slots: TemplateSlots): string {
-    const template = this.templates.get(templateName);
-    if (!template) {
-      throw new Error(`Template '${templateName}' not found`);
-    }
+   // Render template with filled slots
+   render(templateName: string, slots: TemplateSlots): string {
+     const template = this.templates.get(templateName);
+     if (!template) {
+       throw new Error(`Template '${templateName}' not found`);
+     }
 
-    let rendered = template;
+     let rendered = template;
 
-    // Replace simple slots
-    Object.entries(slots).forEach(([key, value]) => {
-      if (typeof value === 'string') {
-        const placeholder = `{{${key}}}`;
-        rendered = rendered.replace(new RegExp(placeholder, 'g'), value);
-      }
-    });
+     // Replace simple string slots
+     Object.entries(slots).forEach(([key, value]) => {
+       if (typeof value === 'string') {
+         const placeholder = `{{${key}}}`;
+         rendered = rendered.replace(new RegExp(placeholder, 'g'), value);
+       }
+     });
 
-    // Handle complex slots (arrays/objects)
-    rendered = this.renderComplexSlots(rendered, slots);
+     // Handle nested object properties (e.g., brand_colors.primary)
+     for (const [key, value] of Object.entries(slots)) {
+       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+         for (const [subKey, subValue] of Object.entries(value)) {
+           const placeholder = `{{${key}.${subKey}}}`;
+           rendered = rendered.replace(new RegExp(placeholder, 'g'), String(subValue));
+         }
+       }
+     }
 
-    return rendered;
-  }
+     // Handle complex slots (arrays)
+     rendered = this.renderComplexSlots(rendered, slots);
+
+     return rendered;
+   }
 
   private renderComplexSlots(template: string, slots: TemplateSlots): string {
     let result = template;
