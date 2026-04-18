@@ -1,4 +1,26 @@
 // src/lib/core/pipeline.ts - Modern Pipeline Architecture
+import { analyzeImageWithFallback } from '../skills/skill-vision-fix';
+import { extractBrandFromUrl, Brand as ExtractedBrand } from '../skills/skill-brand-normalizer';
+import { neutralTemplateEngine } from './neutral-templates';
+import { semanticSanitizer } from './semantic-sanitizer';
+import { configValidator } from './config-validator';
+import { BrandPersonality } from './config-manager';
+
+// Helper function to map extracted category to industry key
+function categoryToIndustry(category: string): string {
+  const cat = category.toLowerCase();
+  if (cat.includes('finance') || cat.includes('fintech') || cat.includes('bank') || cat.includes('credit')) {
+    return 'fintech';
+  }
+  if (cat.includes('food') || cat.includes('dining') || cat.includes('restaurant') || cat.includes('delivery')) {
+    return 'food_delivery';
+  }
+  if (cat.includes('transport') || cat.includes('travel') || cat.includes('logistics') || cat.includes('car') || cat.includes('ride')) {
+    return 'transportation';
+  }
+  return 'generic';
+}
+
 export interface PipelineStage<TInput, TOutput> {
   name: string;
   execute: (input: TInput, context: PipelineContext) => Promise<TOutput>;
@@ -103,37 +125,87 @@ export const createAdCreativeStages = (): PipelineStage<any, any>[] => [
   },
   {
     name: 'vision-analysis',
-    execute: async (input, context) => {
-      // Vision analysis logic
+    execute: async (input: any, context) => {
+      // Only analyze image URLs; skip for copy
+      if (input.adInputType === 'image_url' && input.adInputValue) {
+        try {
+          const vision = await analyzeImageWithFallback(
+            input.adInputValue,
+            undefined,
+            input.brandData?.industry || 'generic'
+          );
+          return { ...input, visionData: vision };
+        } catch (error: any) {
+          context.warnings.push(`Vision analysis failed: ${error.message}`);
+        }
+      }
       return input;
     },
     canSkip: (context) => context.metadata.get('skipVision') === true
   },
   {
     name: 'brand-extraction',
-    execute: async (input, context) => {
-      // Brand extraction logic
-      return input;
+    execute: async (input: any, context) => {
+      try {
+        const extractedBrand: ExtractedBrand = await extractBrandFromUrl(input.targetUrl);
+        const industry = categoryToIndustry(extractedBrand.category || '');
+        // Merge extracted brand with existing brandData, overriding with richer data
+        const enrichedBrandData = {
+          ...input.brandData,
+          name: extractedBrand.name,
+          category: extractedBrand.category,
+          colors: extractedBrand.colors || input.brandData?.colors,
+          confidence: extractedBrand.confidence,
+          industry
+        };
+        return { ...input, brandData: enrichedBrandData };
+      } catch (error: any) {
+        context.warnings.push(`Brand extraction failed: ${error.message}`);
+        return input;
+      }
     }
   },
   {
     name: 'content-generation',
-    execute: async (input, context) => {
-      // Content generation logic
-      return input;
+    execute: async (input: any, context) => {
+      // Generate content slots using neutral template engine
+      const slots = neutralTemplateEngine.generateSlots(
+        input.personality,
+        input.brandData.name,
+        {
+          industry: input.brandData.industry,
+          proofPoints: []
+        }
+      );
+      return { ...input, slots };
     }
   },
   {
     name: 'html-rendering',
-    execute: async (input, context) => {
-      // HTML rendering logic
-      return input;
+    execute: async (input: any, context) => {
+      // Validate and sanitize slots, then render to HTML
+      semanticSanitizer.updatePersonality(input.personality);
+      const validation = configValidator.validateConfigTree(input.slots, input.personality);
+      const html = neutralTemplateEngine.render('landing-page', validation.sanitizedConfig);
+      return { ...input, html, validation };
     }
   },
   {
     name: 'quality-validation',
-    execute: async (input, context) => {
-      // Quality validation logic
+    execute: async (input: any, context) => {
+      // Ensure HTML is present and well-formed
+      if (!input.html) {
+        throw new Error('No HTML generated in html-rendering stage');
+      }
+      // Basic structure check
+      if (!input.html.includes('<!DOCTYPE html>') || !input.html.includes('</html>')) {
+        context.warnings.push('Generated HTML may be incomplete (missing doctype or closing tag)');
+      }
+      // Length check
+      if (input.html.length < 200) {
+        context.warnings.push('Generated HTML is suspiciously short');
+      }
+      // Return full accumulated input
       return input;
     }
   }

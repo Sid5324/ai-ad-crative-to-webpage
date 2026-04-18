@@ -416,7 +416,7 @@ export class NeutralTemplateEngine {
   private generateTitle(brandName: string, personality: BrandPersonality): string {
     const templates = {
       'fast': `${brandName} - Fast, Reliable Service`,
-      'premium': `${brandName} - Premium Quality Solutions`,
+      'premium': `${brandName} - Quality Solutions`,
       'reliable': `${brandName} - Trusted Service Provider`,
       'technical': `${brandName} - Advanced Technology Solutions`
     };
@@ -426,7 +426,7 @@ export class NeutralTemplateEngine {
   private generateMetaDescription(brandName: string, personality: BrandPersonality): string {
     const templates = {
       'fast': `Experience fast, reliable service with ${brandName}. Quick solutions for your needs.`,
-      'premium': `Discover premium quality solutions with ${brandName}. Exceptional service and results.`,
+      'premium': `Discover quality solutions with ${brandName}. Exceptional service and results.`,
       'reliable': `Trust ${brandName} for reliable, dependable service. Proven solutions you can count on.`,
       'technical': `Advanced technical solutions from ${brandName}. Cutting-edge technology and expertise.`
     };
@@ -444,7 +444,7 @@ export class NeutralTemplateEngine {
 
     const toneTitles = {
       'fast': 'Fast, Reliable Solutions',
-      'premium': 'Premium Quality Service',
+      'premium': 'Quality Service',
       'reliable': 'Trusted Solutions You Can Depend On'
     };
 
@@ -456,7 +456,7 @@ export class NeutralTemplateEngine {
 
     const templates = {
       'fast': proof ? `${proof} served quickly and efficiently` : 'Get what you need fast with our streamlined service',
-      'premium': proof ? `Join ${proof} satisfied premium customers` : 'Experience premium quality and exceptional service',
+      'premium': proof ? `Join ${proof} satisfied customers` : 'Experience quality service and exceptional results',
       'reliable': proof ? `Trusted by ${proof} customers worldwide` : 'Dependable service you can trust for all your needs'
     };
 
@@ -488,7 +488,7 @@ export class NeutralTemplateEngine {
   private generateBenefitsSubtitle(personality: BrandPersonality): string {
     const subtitles = {
       'fast': 'Experience the speed and efficiency you deserve',
-      'premium': 'Discover why premium quality matters',
+      'premium': 'Discover why quality matters',
       'reliable': 'See why customers choose us for dependable service'
     };
 
@@ -517,7 +517,7 @@ export class NeutralTemplateEngine {
     return [
       { emoji: '✓', title: 'Quality Service', description: 'Professional service you can depend on' },
       { emoji: '🚀', title: 'Fast Results', description: 'Quick and efficient solutions' },
-      { emoji: '💎', title: 'Premium Experience', description: 'Exceptional quality and attention to detail' },
+      { emoji: '⭐', title: 'Excellent Experience', description: 'Exceptional quality and attention to detail' },
       { emoji: '🤝', title: 'Expert Support', description: 'Dedicated team ready to help' }
     ];
   }
@@ -599,7 +599,7 @@ export class NeutralTemplateEngine {
   private generateBrandDescription(personality: BrandPersonality): string {
     const descriptions = {
       'fast': 'Fast, reliable service you can depend on',
-      'premium': 'Premium quality solutions for discerning customers',
+      'premium': 'Quality solutions for discerning customers',
       'reliable': 'Trusted service provider with proven results'
     };
 
