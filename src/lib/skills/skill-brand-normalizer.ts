@@ -178,7 +178,7 @@ function createFallbackBrand(url: string): Brand {
       tagline: '',
       description: '',
       category: 'Business',
-      confidence: 0.3, // Low confidence for fallback
+       confidence: 0.5, // Moderate confidence for educated fallback
       colors: {
         primary: '#1e293b',
         accent: '#3b82f6',
