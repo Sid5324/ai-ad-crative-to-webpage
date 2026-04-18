@@ -115,7 +115,7 @@ export class ConfigManager {
       description: 'Ensures generated content matches brand personality',
       enabled: true,
       severity: 'error',
-      condition: (context) => context.content && context.personality,
+      condition: (context) => (context.content || context.html) && context.personality,
       action: async (context) => {
         const driftScore = this.calculateSemanticDrift(context);
         const threshold = this.getThresholdForSeverity('semantic-drift');
@@ -213,7 +213,7 @@ export class ConfigManager {
   private calculateSemanticDrift(context: any): number {
     // Enhanced semantic drift calculation
     let driftScore = 0;
-    const content = (context.html || '').toLowerCase();
+    const content = (context.content || context.html || '').toLowerCase();
     const personality = context.personality;
 
     if (personality) {
