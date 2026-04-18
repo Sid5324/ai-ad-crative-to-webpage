@@ -6,12 +6,10 @@ import { withAnalytics } from '@/lib/core/analytics';
 import { withAPIVersioning } from '@/lib/core/api-versioning';
 import { withFeatureFlags } from '@/lib/core/feature-flags';
 
-// In-memory preview storage (volatile)
 const PREVIEWS: Record<string, any> = {};
 
-// Core generation handler - receives Request with feature flags already set
 async function handleGeneration(req: Request, featureContext: any) {
-  const traceId = featureContext.sessionId;
+  const traceId = featureContext?.sessionId || Math.random().toString(36).substring(7);
   const startTime = Date.now();
 
   console.log(`🚀 [${traceId}] MODERN AD CREATIVE GENERATION SYSTEM`);
@@ -34,7 +32,6 @@ async function handleGeneration(req: Request, featureContext: any) {
       adInputValueLength: input.adInputValue?.length
     });
 
-    // Validate input
     if (!input.targetUrl) {
       return NextResponse.json({ success: false, error: 'targetUrl required' }, { status: 400 });
     }
@@ -64,7 +61,7 @@ async function handleGeneration(req: Request, featureContext: any) {
     console.log(`   [${traceId}] HTML Length: ${result.html?.length || 0}`);
     console.log(`   [${traceId}] Semantic Score: ${result.metadata?.validation?.['semantic-drift']?.score || 'N/A'}`);
 
-    // Create preview (simple random ID)
+    // Create preview
     const previewId = Math.random().toString(36).substring(2, 12);
     PREVIEWS[previewId] = {
       html: result.html,
@@ -79,25 +76,21 @@ async function handleGeneration(req: Request, featureContext: any) {
       html: result.html,
       metadata: result.metadata,
       performance: result.performance,
-      engine: `Modern-Ad-Creative-System-v${featureContext.version}-prod-v4`,
+      engine: `Modern-Ad-Creative-System-v${featureContext.version || '2'}-prod-v4`,
       features: result.metadata?.features
     });
 
   } catch (error: any) {
     console.error(`💥 [${traceId}] Critical error:`, error?.message || error);
-
     return NextResponse.json({
       success: false,
       error: error?.message || 'Internal server error',
-      performance: {
-        duration: Date.now() - startTime,
-        error: true
-      }
+      performance: { duration: Date.now() - startTime, error: true }
     }, { status: 500 });
   }
 }
 
-// Apply all middleware layers (outermost first, executes innermost first)
+// Middleware composition: outermost = rate-limit, innermost = feature-flags
 export const POST = withRateLimit('api_generation',
   withAnalytics('generation',
     withAPIVersioning(
@@ -106,14 +99,11 @@ export const POST = withRateLimit('api_generation',
   )
 );
 
-// GET handler for retrieving previews by ID (no middleware needed)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
-
   if (!id || !PREVIEWS[id]) {
     return NextResponse.json({ error: 'Preview expired' }, { status: 404 });
   }
-
   return NextResponse.json(PREVIEWS[id]);
 }

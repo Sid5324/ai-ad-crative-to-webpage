@@ -326,14 +326,11 @@ export function withFeatureFlags(
       userAgent: baseReq.headers.get('User-Agent') || undefined
     };
 
-    // Add feature flags to request headers for downstream use
-    const enabledFlags = featureFlagManager.getEnabledFlags(context);
-    const headers = new Headers(baseReq.headers);
-    headers.set('X-Enabled-Features', enabledFlags.join(','));
+    // Note: We intentionally do NOT clone the Request to add headers.
+    // The X-Enabled-Features header was previously added but caused issues with Next.js Request cloning.
+    // Feature data is available via the context parameter instead.
 
-    const enhancedReq = new Request(baseReq, { headers });
-
-    return handler(enhancedReq, context, ...args);
+    return handler(baseReq, context, ...args);
   };
 }
 
