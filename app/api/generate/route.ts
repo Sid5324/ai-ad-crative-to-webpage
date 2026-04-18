@@ -12,22 +12,22 @@ import { withFeatureFlags } from '@/lib/core/feature-flags';
 const PREVIEWS: Record<string, any> = {};
 
 // Core generation handler
-async function handleGeneration(versionedRequest: any, featureContext: any) {
-  const traceId = featureContext.sessionId;
-  const startTime = Date.now();
+   async function handleGeneration(req: Request, featureContext: any) {
+     const traceId = featureContext.sessionId;
+     const startTime = Date.now();
 
-  console.log(`🚀 [${traceId}] MODERN AD CREATIVE GENERATION SYSTEM v${versionedRequest.version}`);
-  console.log(`🚀 [${traceId}] ========================================`);
+     console.log(`🚀 [${traceId}] MODERN AD CREATIVE GENERATION SYSTEM`);
+     console.log(`🚀 [${traceId}] ========================================`);
 
-  try {
-    const body = await versionedRequest.originalRequest.json();
-    console.log(`📥 [${traceId}] RAW BODY:`, JSON.stringify(body).substring(0, 500));
+     try {
+       const body = await req.json();
+       console.log(`📥 [${traceId}] RAW BODY:`, JSON.stringify(body).substring(0, 500));
 
-    const input = {
-      targetUrl: body.targetUrl || body.url || '',
-      adInputType: body.adInputType as 'image_url' | 'copy',
-      adInputValue: body.adImageUrl || body.adInputValue || body.adCopy || ''
-    };
+       const input = {
+         targetUrl: body.targetUrl || body.url || '',
+         adInputType: body.adInputType as 'image_url' | 'copy',
+         adInputValue: body.adImageUrl || body.adInputValue || body.adCopy || ''
+       };
 
     console.log(`🔧 [${traceId}] CONSTRUCTED INPUT:`, {
       targetUrl: input.targetUrl,
@@ -80,7 +80,7 @@ async function handleGeneration(versionedRequest: any, featureContext: any) {
       html: result.html,
       metadata: result.metadata,
       performance: result.performance,
-      engine: `Modern-Ad-Creative-System-v${versionedRequest.version}-prod-v4`,
+      engine: `Modern-Ad-Creative-System-v${featureContext.version}-prod-v4`,
       features: result.metadata?.features
     });
 

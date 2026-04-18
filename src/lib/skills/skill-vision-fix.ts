@@ -2,7 +2,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AdVision } from '../schemas/skill-schemas';
 
-const genai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || '');
+// Only initialize if API key is configured
+let genai: GoogleGenerativeAI | null = null;
+if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+  genai = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+}
 
 export async function analyzeImageWithFallback(
   imageUrl: string | undefined,
@@ -38,6 +42,9 @@ export async function analyzeImageWithFallback(
 }
 
 async function analyzeWithGemini(url: string): Promise<AdVision> {
+  if (!genai) {
+    throw new Error('Gemini API key not configured');
+  }
   const model = genai.getGenerativeModel({ model: 'gemini-1.5-flash' });
   
   const imageRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
