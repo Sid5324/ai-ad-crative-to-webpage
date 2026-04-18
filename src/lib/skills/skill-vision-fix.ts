@@ -45,7 +45,7 @@ async function analyzeWithGemini(url: string): Promise<AdVision> {
   if (!genai) {
     throw new Error('Gemini API key not configured');
   }
-  const model = genai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genai.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
   
   const imageRes = await fetch(url, { signal: AbortSignal.timeout(10000) });
   if (!imageRes.ok) throw new Error(`Image fetch failed: ${imageRes.status}`);

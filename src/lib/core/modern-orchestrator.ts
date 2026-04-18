@@ -303,13 +303,39 @@ export class ModernAdCreativeOrchestrator {
 
     performanceMonitor.recordCacheMiss('brand');
 
-    // Extract brand information
-    brandData = {
-      domain,
-      name: domain.split('.')[0],
-      industry: this.detectIndustry(domain),
-      colors: this.getDefaultColors(domain)
-    };
+    // Try real brand extraction first
+    try {
+      const { extractBrandFromUrl } = await import('../skills/skill-brand-normalizer');
+      const extractedBrand = await extractBrandFromUrl(targetUrl);
+      
+      if (extractedBrand && extractedBrand.confidence > 0.3) {
+        brandData = {
+          domain,
+          name: extractedBrand.name,
+          industry: this.detectIndustry(domain),
+          colors: extractedBrand.colors || this.getDefaultColors(domain),
+          confidence: extractedBrand.confidence,
+          category: extractedBrand.category
+        };
+        
+        console.log(`[${traceId}] ✅ Brand extraction successful: ${brandData.name}`);
+      } else {
+        throw new Error('Low confidence brand extraction');
+      }
+    } catch (error) {
+      console.log(`[${traceId}] ⚠️ Brand extraction failed, using fallback:`, error.message);
+      
+      // Smart fallback - proper capitalization instead of raw domain
+      const rawName = domain.split('.')[0];
+      const properName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+      
+      brandData = {
+        domain,
+        name: properName,
+        industry: this.detectIndustry(domain),
+        colors: this.getDefaultColors(domain)
+      };
+    }
 
     // Cache the result
     await brandCache.setBrandData(domain, brandData);
