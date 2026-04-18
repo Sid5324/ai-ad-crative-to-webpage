@@ -1,6 +1,5 @@
 // app/api/generate/route.ts - Modern Ad Creative Generation System
 import { NextResponse } from 'next/server';
-import { nanoid } from 'nanoid';
 import { modernOrchestrator } from '@/lib/core/modern-orchestrator';
 import { performanceMonitor } from '@/lib/core/monitoring';
 import { withRateLimit } from '@/lib/core/rate-limiter';
@@ -12,12 +11,12 @@ import { withFeatureFlags } from '@/lib/core/feature-flags';
 const PREVIEWS: Record<string, any> = {};
 
 // Core generation handler
-   async function handleGeneration(req: Request, featureContext: any) {
-     const traceId = featureContext.sessionId;
-     const startTime = Date.now();
+async function handleGeneration(req: Request, featureContext: any) {
+  const traceId = featureContext.sessionId;
+  const startTime = Date.now();
 
-     console.log(`🚀 [${traceId}] MODERN AD CREATIVE GENERATION SYSTEM`);
-     console.log(`🚀 [${traceId}] ========================================`);
+  console.log(`🚀 [${traceId}] MODERN AD CREATIVE GENERATION SYSTEM`);
+  console.log(`🚀 [${traceId}] ========================================`);
 
      try {
        const body = await req.json();
@@ -65,9 +64,9 @@ const PREVIEWS: Record<string, any> = {};
     console.log(`   [${traceId}] Duration: ${result.performance?.duration}ms`);
     console.log(`   [${traceId}] HTML Length: ${result.html?.length || 0}`);
 
-    // Create preview
-    const previewId = nanoid(10);
-    PREVIEWS[previewId] = {
+     // Create preview
+     const previewId = Math.random().toString(36).substring(2, 12);
+     PREVIEWS[previewId] = {
       html: result.html,
       metadata: result.metadata,
       performance: result.performance
