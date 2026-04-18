@@ -33,7 +33,7 @@ export class APIVersionManager {
     const acceptHeader = req.headers.get('Accept') || '';
     const versionMatch = acceptHeader.match(/application\/vnd\.adcreative\.([^+\s]+)\+json/);
 
-    let version = 'v1'; // Default to v1 for backward compatibility
+    let version = 'v2'; // Default to latest v2
 
     if (versionMatch) {
       version = versionMatch[1];
