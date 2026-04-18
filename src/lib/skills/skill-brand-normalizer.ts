@@ -142,22 +142,22 @@ function validateHexColor(color: any): string | null {
   return null;
 }
 
-// Normalize category to known values
+// Normalize category to known values (snake_case to match system)
 function normalizeCategory(category: string): string {
   const lower = category?.toLowerCase() || '';
 
   if (lower.includes('fintech') || lower.includes('finance') || lower.includes('credit')) {
-    return 'Finance';
+    return 'fintech';
   }
   if (lower.includes('food') || lower.includes('restaurant') || lower.includes('delivery')) {
-    return 'Food & Dining';
+    return 'food_delivery';
   }
   if (lower.includes('transport') || lower.includes('limousine') || lower.includes('car')) {
-    return 'Transportation';
+    return 'transportation';
   }
 
   // Default fallback
-  return 'Business';
+  return 'generic';
 }
 
 // Create fallback brand from hostname only

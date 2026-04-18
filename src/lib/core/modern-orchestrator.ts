@@ -309,14 +309,14 @@ export class ModernAdCreativeOrchestrator {
       const extractedBrand = await extractBrandFromUrl(targetUrl);
       
        if (extractedBrand && extractedBrand.confidence > 0.3) {
-         brandData = {
-           domain,
-           name: extractedBrand.name,
-           industry: extractedBrand.category,
-           colors: extractedBrand.colors || this.getDefaultColors(domain),
-           confidence: extractedBrand.confidence,
-           category: extractedBrand.category
-         };
+          brandData = {
+            domain,
+            name: extractedBrand.name,
+            industry: extractedBrand.category,
+            colors: extractedBrand.colors || this.getDefaultColors(domain.split('.')[0]),
+            confidence: extractedBrand.confidence,
+            category: extractedBrand.category
+          };
         
         console.log(`[${traceId}] ✅ Brand extraction successful: ${brandData.name}`);
       } else {
