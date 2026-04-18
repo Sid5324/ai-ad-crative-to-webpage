@@ -82,9 +82,9 @@ Focus on: offer, CTA, target audience, emotional appeal.`;
 
 function parseAdText(text: string, category?: string): AdVision {
   const lower = text.toLowerCase();
-  
-  // Default CTA based on category (bank-friendly, not banned)
-  let ctaSignal = category === 'Finance' ? 'Apply Now' : 'Get Started';
+
+  // Default CTA based on category (use snake_case)
+  let ctaSignal = category === 'fintech' ? 'Apply Now' : 'Get Started';
   const ctaPatterns: [RegExp, string][] = [
     [/sign\s*up/i, 'Sign Up'],
     [/order\s*now/i, 'Order Now'],
@@ -148,22 +148,22 @@ function parseAdText(text: string, category?: string): AdVision {
 
 function createCategoryDefaults(category?: string): AdVision {
   const defaults: Record<string, Partial<AdVision>> = {
-    'Finance': {
+    'fintech': {
       visualMood: ['trust', 'premium'],
       ctaSignals: ['Apply Now'],
       offerSignals: ['cashback', 'rewards']
     },
-    'Food & Dining': {
+    'food_delivery': {
       visualMood: ['appetizing', 'friendly'],
       ctaSignals: ['Order Now'],
       offerSignals: ['discount', 'delivery']
     },
-    'E-commerce': {
+    'ecommerce': {
       visualMood: ['shopping', 'modern'],
       ctaSignals: ['Shop Now'],
       offerSignals: ['sale']
     },
-    'SaaS': {
+    'saas': {
       visualMood: ['professional', 'modern'],
       ctaSignals: ['Start Free'],
       offerSignals: ['trial']

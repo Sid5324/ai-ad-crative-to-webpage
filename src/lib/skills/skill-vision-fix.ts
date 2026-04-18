@@ -100,8 +100,9 @@ function parseAdText(text: string, category: string): AdVision {
 }
 
 function getCategoryFallback(category: string): AdVision {
+  // Keys match snake_case industry values
   const defaults: Record<string, AdVision> = {
-    'Finance': {
+    'fintech': {
       status: 'unavailable',
       visualMood: ['premium'],
       imageryType: 'text-led',
@@ -111,7 +112,7 @@ function getCategoryFallback(category: string): AdVision {
       claimSignals: [],
       confidence: 0.5
     },
-    'Food & Dining': {
+    'food_delivery': {
       status: 'unavailable',
       visualMood: ['appetizing'],
       imageryType: 'text-led',
@@ -121,7 +122,7 @@ function getCategoryFallback(category: string): AdVision {
       claimSignals: [],
       confidence: 0.5
     },
-    'E-commerce': {
+    'ecommerce': {
       status: 'unavailable',
       visualMood: ['shopping'],
       imageryType: 'text-led',
@@ -131,7 +132,7 @@ function getCategoryFallback(category: string): AdVision {
       claimSignals: [],
       confidence: 0.5
     },
-    'SaaS': {
+    'saas': {
       status: 'unavailable',
       visualMood: ['professional'],
       imageryType: 'text-led',
@@ -141,7 +142,7 @@ function getCategoryFallback(category: string): AdVision {
       claimSignals: [],
       confidence: 0.5
     },
-    'Healthcare': {
+    'healthcare': {
       status: 'unavailable',
       visualMood: ['trustworthy'],
       imageryType: 'text-led',
@@ -151,7 +152,7 @@ function getCategoryFallback(category: string): AdVision {
       claimSignals: [],
       confidence: 0.5
     },
-    'Travel': {
+    'travel': {
       status: 'unavailable',
       visualMood: ['adventurous'],
       imageryType: 'text-led',
@@ -163,5 +164,5 @@ function getCategoryFallback(category: string): AdVision {
     }
   };
 
-  return defaults[category] || defaults['Finance'];
+  return defaults[category] || defaults['fintech'];
 }
