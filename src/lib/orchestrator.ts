@@ -28,7 +28,7 @@ export class MasterOrchestrator {
     try {
       // Try 26-agent system first (dynamic import)
       try {
-        const { jobOrchestrator } = await import('../../packages/orchestrator/run-job');
+         const { jobOrchestrator } = await import('../../../packages/orchestrator/run-job');
 
         const jobRequest = {
           adInputType: (input.adImage.startsWith('http') ? 'image_url' : 'copy') as 'image_url' | 'copy',

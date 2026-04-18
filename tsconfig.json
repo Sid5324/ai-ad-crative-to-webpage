@@ -16,13 +16,12 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
-    "baseUrl": ".",
-    "ignoreDeprecations": "5c",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "plugins": [
+     "jsx": "react-jsx",
+     "paths": {
+       "@/*": ["./src/*"]
+     },
+     "ignoreDeprecations": "6.0",
+     "plugins": [
       {
         "name": "next"
       }
